@@ -1,0 +1,71 @@
+/* style.css */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    padding: 15px;
+    background-color: #f4f7f9;
+}
+
+#app-container {
+    max-width: 700px;
+    margin: 0 auto;
+}
+
+#titulo-modulo {
+    color: #1abc9c;
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#midia-container {
+    text-align: center;
+    margin-bottom: 20px;
+}
+
+#imagem-principal-bg {
+    width: 100%;
+    min-height: 250px; /* Garante que a área seja visível */
+    
+    /* Configurações para forçar o layout e centralizar (debug) */
+    display: flex; 
+    justify-content: center;
+    
+    background-color: #ddd; /* Fundo cinza para debug */
+    background-size: contain; /* Ajusta a imagem dentro da div */
+    background-repeat: no-repeat;
+    background-position: center;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+#audio-player {
+    width: 100%;
+}
+
+#texto-enunciado {
+    background-color: white;
+    padding: 15px;
+    border-left: 5px solid #3498db;
+    border-radius: 4px;
+    margin-bottom: 20px;
+    line-height: 1.6;
+}
+
+.alternativa-btn {
+    display: block;
+    width: 100%;
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    border: 1px solid #bdc3c7;
+    background-color: white;
+    color: #2c3e50;
+    text-align: left;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: background-color 0.2s, border-color 0.2s;
+}
+
+.alternativa-btn:hover {
+    background-color: #ecf0f1;
+    border-color: #3498db;
+}
