@@ -1,4 +1,4 @@
-// main.js - VERSÃO FINAL COM FEEDBACK CSS SIMPLIFICADO
+// main.js - VERSÃO FINAL: Feedback CSS, Lógica de Imagem Corrigida
 
 // IMPORTAÇÃO CORRIGIDA: Inclui a função isLastQuestion
 import { carregarTodasQuestoes, getProximaQuestao, avancarQuestaoNaLista, supabase, isLastQuestion } from './supabase_client.js';
@@ -6,7 +6,7 @@ import { carregarTodasQuestoes, getProximaQuestao, avancarQuestaoNaLista, supaba
 let respostaSelecionada = null;
 let questaoAtual = null; 
 
-// Duração da animação Lottie em milissegundos
+// Duração da animação em milissegundos
 const ANIMATION_DURATION = 1500; 
 
 // 1. Mapeamento de Módulos
@@ -28,15 +28,15 @@ function getFiltrosDaUrl() {
     };
 }
 
-// ** Funções de Feedback (NOVA LÓGICA CSS) **
+// ** Funções de Feedback (Lógica CSS Simples) **
 function showFeedback(acertou) {
     const overlay = document.getElementById('feedback-overlay');
     const successBox = document.getElementById('feedback-success');
     const failureBox = document.getElementById('feedback-failure');
 
-    if (!overlay) return;
+    if (!overlay || !successBox || !failureBox) return;
 
-    // Esconde ambos para garantir que apenas um apareça
+    // Garante que a caixa anterior está limpa
     successBox.classList.remove('show');
     failureBox.classList.remove('show');
 
@@ -66,7 +66,7 @@ window.selecionarAlternativa = function(textoAlternativa) {
         return;
     }
     
-    // Armazena a seleção como o TEXTO DA ALTERNATIVA (ex: "water.")
+    // Armazena a seleção como o TEXTO DA ALTERNATIVA (ex: "water.)
     // Limpeza agressiva do texto selecionado (remove pontuação, espaços, padroniza para maiúscula)
     respostaSelecionada = String(textoAlternativa)
         .replace(/[.,;]/g, '')
@@ -249,17 +249,20 @@ function carregarPictureDescription(questao) {
     const imgElement = document.getElementById('imagem-principal-bg');
     
     if (questao.pcimagem && imgElement) {
-        let nomeArquivoLimpo = String(questao.pcimagem).replace(/\s/g, '').trim(); 
-        const nomeArquivoEncoded = encodeURIComponent(nomeArquivoLimpo); 
+        // *** CORREÇÃO APLICADA AQUI: Removemos o .replace(/\s/g, '') ***
+        // Apenas limpa espaços nas bordas. O Supabase.storage.getPublicUrl lida com espaços internos.
+        let nomeArquivoRaw = String(questao.pcimagem).trim(); 
         
-        const { data: publicUrl } = supabase.storage.from('connection').getPublicUrl(nomeArquivoEncoded);
+        const { data: publicUrl } = supabase.storage.from('connection').getPublicUrl(nomeArquivoRaw);
         const finalUrl = publicUrl.publicUrl;
         
         imgElement.style.backgroundImage = `url('${finalUrl}')`;
         imgElement.style.display = 'block';
+        console.log(`URL da Imagem Carregada: ${finalUrl}`); // DEBUG
 
     } else if(imgElement) {
         imgElement.style.display = 'none';
+        console.log("A coluna 'pcimagem' está vazia ou não existe.");
     }
 
     // Renderização das Alternativas (usando a coluna 'opcoes')
