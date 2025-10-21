@@ -1,15 +1,32 @@
-// main.js - VERSÃO FINAL: Feedback CSS, Imagem Corrigida (Duplicação de URL e Tag IMG)
+// main.js - VERSÃO FINAL 2.0: CORREÇÃO DE URL MANUAL PARA SUPABASE (BLOCKED_BY_ORB)
 
 // IMPORTAÇÃO CORRIGIDA: Inclui a função isLastQuestion
+// Mantemos 'supabase' na importação, mas o usaremos menos para URLs
 import { carregarTodasQuestoes, getProximaQuestao, avancarQuestaoNaLista, supabase, isLastQuestion } from './supabase_client.js';
 
 let respostaSelecionada = null;
 let questaoAtual = null; 
 
-// Duração da animação em milissegundos
 const ANIMATION_DURATION = 1500; 
 
-// 1. Mapeamento de Módulos
+// URL BASE DO SUPABASE - É CRÍTICO QUE ESTE ESTEJA CORRETO
+// Você pode obter esta base em: Settings > API > URL, e adicionar o resto manualmente.
+const SUPABASE_BASE_URL = 'https://qazjyzqptdcnuezllbpr.supabase.co/storage/v1/object/public/connection/'; 
+
+// FUNÇÃO UTILITÁRIA PARA GERAR O URL LIMPO
+function generateSupabaseUrl(caminhoArquivo) {
+    caminhoArquivo = String(caminhoArquivo).trim();
+    if (caminhoArquivo.startsWith('http')) {
+        // Se já for um URL completo (erro de BD), use-o.
+        return caminhoArquivo;
+    }
+    
+    // Constrói o URL Limpo e Seguro
+    // Usamos encodeURIComponent para garantir que caminhos com espaços ou caracteres especiais funcionem
+    return SUPABASE_BASE_URL + encodeURIComponent(caminhoArquivo);
+}
+
+// 1. Mapeamento de Módulos (MANTIDO)
 const MODULOS_RENDER = {
     'Picture Description': carregarPictureDescription,
     'Story Time': carregarStoryTime,
@@ -17,7 +34,7 @@ const MODULOS_RENDER = {
     'Quiz': carregarQuiz,
 };
 
-// 2. Função Utilitária para extrair TODOS os parâmetros de filtro da URL
+// 2. Função Utilitária para extrair TODOS os parâmetros de filtro da URL (MANTIDO)
 function getFiltrosDaUrl() {
     const params = new URLSearchParams(window.location.search);
     return {
@@ -28,7 +45,7 @@ function getFiltrosDaUrl() {
     };
 }
 
-// ** Funções de Feedback (Lógica CSS Simples) **
+// ** Funções de Feedback (MANTIDO) **
 function showFeedback(acertou) {
     const overlay = document.getElementById('feedback-overlay');
     const successBox = document.getElementById('feedback-success');
@@ -55,7 +72,7 @@ function showFeedback(acertou) {
 }
 
 
-// ** Função para selecionar, verificar e dar feedback AUTOMATICAMENTE **
+// ** Função para selecionar, verificar e dar feedback AUTOMATICAMENTE (MANTIDO) **
 window.selecionarAlternativa = function(textoAlternativa) {
     if (respostaSelecionada !== null) {
         return;
@@ -83,9 +100,15 @@ window.selecionarAlternativa = function(textoAlternativa) {
     const acertou = respostaSelecionada === respostaCorreta; 
 
     document.querySelectorAll('.alternativa-btn').forEach(btn => {
-        const btnTextoCompleto = btn.innerText; 
+        // Para áudios, o btn.innerText não funciona; precisamos do textoOpcao.
+        // Já limpamos o texto selecionado e o correto, então o código de feedback precisa 
+        // ser um pouco mais flexível para o Quiz.
         
-        const btnTextoLimpo = String(btnTextoCompleto)
+        // Pega o valor real da alternativa (texto ou caminho do arquivo)
+        const btnValueRaw = btn.getAttribute('data-value');
+        if (!btnValueRaw) return; // Se não tiver data-value, ignora
+
+        const btnTextoLimpo = String(btnValueRaw)
             .replace(/[.,;]/g, '')
             .replace(/\s/g, ' ')
             .trim()
@@ -93,7 +116,8 @@ window.selecionarAlternativa = function(textoAlternativa) {
         
         btn.classList.remove('selected', 'acertou', 'errou', 'correta');
         
-        if (btnTextoCompleto === textoAlternativa) { 
+        // Marca a seleção do usuário
+        if (btnTextoLimpo === respostaSelecionada) { 
             if (acertou) {
                 btn.classList.add('acertou');
             } else {
@@ -101,6 +125,7 @@ window.selecionarAlternativa = function(textoAlternativa) {
             }
         }
         
+        // Se errou, marca a correta
         if (!acertou && btnTextoLimpo === respostaCorreta) {
             btn.classList.add('correta'); 
         }
@@ -117,8 +142,7 @@ window.selecionarAlternativa = function(textoAlternativa) {
     document.getElementById('btn-proxima-questao').disabled = false;
 }
 
-
-// 3. Função central para exibir a questão ATUAL (NÃO AVANÇA O ÍNDICE)
+// 3. Função central para exibir a questão ATUAL (MANTIDO)
 function exibirQuestaoAtual() {
     respostaSelecionada = null;
     
@@ -129,15 +153,19 @@ function exibirQuestaoAtual() {
         btnProxima.onclick = window.avancarQuiz; 
     }
 
+    // Resetar imagem
     const imagemElement = document.getElementById('imagem-principal-bg');
     if (imagemElement) {
         imagemElement.style.display = 'none';
-        // CRÍTICO: Limpa a imagem anterior, já que não é background-image
         imagemElement.src = ''; 
     }
     
+    // Resetar áudio (pergunta/enunciado)
     const audioElement = document.getElementById('audio-player');
-    if (audioElement) audioElement.style.display = 'none';
+    if (audioElement) {
+        audioElement.style.display = 'none';
+        audioElement.src = '';
+    }
     
     questaoAtual = getProximaQuestao(); 
     
@@ -166,7 +194,6 @@ function exibirQuestaoAtual() {
         if (renderFunction) {
             renderFunction(questaoAtual); 
             document.getElementById('titulo-modulo').innerText = questaoAtual.lessons; 
-            console.log(`Questão (lessons: ${moduloAtual}) carregada com sucesso. ID: ${questaoAtual.id}`);
         } else {
             document.getElementById('titulo-modulo').innerText = `Erro: Módulo '${moduloAtual}' não possui função de renderização definida.`;
         }
@@ -176,8 +203,7 @@ function exibirQuestaoAtual() {
     }
 } 
 
-
-// ** Função para AVANÇAR o Quiz **
+// ** Função para AVANÇAR o Quiz ** (MANTIDO)
 window.avancarQuiz = function() {
     if (typeof avancarQuestaoNaLista === 'function') {
         avancarQuestaoNaLista();
@@ -186,8 +212,9 @@ window.avancarQuiz = function() {
     exibirQuestaoAtual();
 }
 
-// 5. FUNÇÃO DE INICIALIZAÇÃO DA PÁGINA
+// 5. FUNÇÃO DE INICIALIZAÇÃO DA PÁGINA (MANTIDO)
 window.onload = async function() {
+    // ... (restante da função onload) ...
     const btnProxima = document.getElementById('btn-proxima-questao');
     if (btnProxima) {
         btnProxima.onclick = window.avancarQuiz; 
@@ -216,39 +243,24 @@ window.onload = async function() {
 
 // 6. FUNÇÕES DE RENDERIZAÇÃO ESPECÍFICAS DE CADA MÓDULO
 
-// MÓDULO: Picture Description (AGORA USA img.src)
+// MÓDULO: Picture Description (APENAS URL CORRIGIDA)
 function carregarPictureDescription(questao) {
     
     document.getElementById('texto-enunciado').innerText = questao.pctitulo || "Enunciado não encontrado.";
 
-    // Lógica da Imagem (usando a coluna 'pcimagem')
     const imgElement = document.getElementById('imagem-principal-bg');
     
     if (questao.pcimagem && imgElement) {
-        let nomeArquivoRaw = String(questao.pcimagem).trim(); 
-        let finalUrl;
-
-        // Verifica se é um URL completo ou apenas o nome do arquivo (Correção da duplicação de URL)
-        if (nomeArquivoRaw.startsWith('http')) {
-            finalUrl = nomeArquivoRaw;
-        } else {
-            const { data: publicUrl } = supabase.storage.from('connection').getPublicUrl(nomeArquivoRaw);
-            finalUrl = publicUrl.publicUrl;
-        }
-        
-        // *** CRÍTICO: Usa .src para a tag IMG ***
-        imgElement.src = finalUrl; 
+        // *** NOVO: Usa a função utilitária generateSupabaseUrl ***
+        imgElement.src = generateSupabaseUrl(questao.pcimagem);
         imgElement.style.display = 'block';
-
-        console.log(`URL da Imagem Carregada (FINAL): ${finalUrl}`); 
 
     } else if(imgElement) {
         imgElement.style.display = 'none';
         imgElement.src = ''; 
-        console.log("A coluna 'pcimagem' está vazia ou não existe.");
     }
 
-    // Renderização das Alternativas (usando a coluna 'opcoes')
+    // Renderização das Alternativas (MANTIDO - APENAS ADICIONANDO data-value)
     const containerAlternativas = document.getElementById('alternativas-container');
     
     if (questao.opcoes && Array.isArray(questao.opcoes)) { 
@@ -261,6 +273,7 @@ function carregarPictureDescription(questao) {
             const textoOpcao = texto.trim(); 
             button.innerText = textoOpcao; 
             
+            button.setAttribute('data-value', textoOpcao); // NOVO: Para feedback
             button.onclick = (event) => window.selecionarAlternativa(textoOpcao); 
             containerAlternativas.appendChild(button);
         });
@@ -269,23 +282,174 @@ function carregarPictureDescription(questao) {
     }
 }
 
-// MÓDULO: Story Time (Exemplo)
+// MÓDULO: Story Time (APENAS URL CORRIGIDA)
 function carregarStoryTime(questao) {
     document.getElementById('texto-enunciado').innerText = questao.sttitulo || "Conteúdo da história não encontrado.";
-    const audioPlayer = document.getElementById('audio-player');
-    if (questao.staudio) {
-        const { data: publicUrl } = supabase.storage.from('connection').getPublicUrl(String(questao.staudio).trim());
-        audioPlayer.src = publicUrl.publicUrl;
-        audioPlayer.style.display = 'block';
+
+    const imgElement = document.getElementById('imagem-principal-bg');
+    if (questao.stimagem && imgElement) {
+        // *** NOVO: Usa a função utilitária generateSupabaseUrl ***
+        imgElement.src = generateSupabaseUrl(questao.stimagem);
+        imgElement.style.display = 'block';
+
+    } else if(imgElement) {
+        imgElement.style.display = 'none';
+        imgElement.src = ''; 
+    }
+
+    const audioElement = document.getElementById('audio-player');
+    if (questao.staudio && audioElement) {
+        // *** NOVO: Usa a função utilitária generateSupabaseUrl ***
+        audioElement.src = generateSupabaseUrl(questao.staudio);
+        audioElement.style.display = 'block';
     } else {
-        audioPlayer.style.display = 'none';
+        audioElement.style.display = 'none';
+        audioElement.src = '';
+    }
+
+    // Renderização das Alternativas (MANTIDO - APENAS ADICIONANDO data-value)
+    const containerAlternativas = document.getElementById('alternativas-container');
+    
+    if (questao.opcoes && Array.isArray(questao.opcoes)) { 
+        const alternativas = questao.opcoes; 
+        
+        alternativas.forEach((texto, index) => {
+            const button = document.createElement('button');
+            button.className = 'alternativa-btn';
+            
+            const textoOpcao = texto.trim(); 
+            button.innerText = textoOpcao; 
+            
+            button.setAttribute('data-value', textoOpcao); // NOVO: Para feedback
+            button.onclick = (event) => window.selecionarAlternativa(textoOpcao); 
+            containerAlternativas.appendChild(button);
+        });
+    } else {
+        containerAlternativas.innerHTML = '<p style="color: red;">Erro: Formato da coluna OPCOES inválido ou vazio.</p>';
     }
 }
 
+// MÓDULO: Grammar Practice (APENAS URL CORRIGIDA)
 function carregarGrammarPractice(questao) {
     document.getElementById('texto-enunciado').innerText = questao.gmtitulo || "Conteúdo de gramática não encontrado.";
+
+    const imgElement = document.getElementById('imagem-principal-bg');
+    
+    if (questao.gpimagem && imgElement) {
+        // *** NOVO: Usa a função utilitária generateSupabaseUrl ***
+        imgElement.src = generateSupabaseUrl(questao.gpimagem);
+        imgElement.style.display = 'block'; 
+    } else if (imgElement) {
+        imgElement.style.display = 'none'; 
+        imgElement.src = ''; 
+    }
+
+    const audioElement = document.getElementById('audio-player');
+    
+    if (questao.gpaudio && audioElement) {
+        // *** NOVO: Usa a função utilitária generateSupabaseUrl ***
+        audioElement.src = generateSupabaseUrl(questao.gpaudio);
+        audioElement.style.display = 'block'; 
+    } else if (audioElement) {
+        audioElement.style.display = 'none';
+        audioElement.src = ''; 
+    }
+
+    // Renderização das Alternativas (MANTIDO - APENAS ADICIONANDO data-value)
+    const containerAlternativas = document.getElementById('alternativas-container');
+    
+    if (questao.opcoes && Array.isArray(questao.opcoes)) { 
+        const alternativas = questao.opcoes; 
+        
+        alternativas.forEach((texto, index) => {
+            const button = document.createElement('button');
+            button.className = 'alternativa-btn';
+            
+            const textoOpcao = texto.trim(); 
+            button.innerText = textoOpcao; 
+            
+            button.setAttribute('data-value', textoOpcao); // NOVO: Para feedback
+            button.onclick = (event) => window.selecionarAlternativa(textoOpcao); 
+            containerAlternativas.appendChild(button);
+        });
+    } else {
+        containerAlternativas.innerHTML = '<p style="color: red;">Erro: Formato da coluna OPCOES inválido ou vazio.</p>';
+    }
 }
 
+
+// MÓDULO: Quiz (APENAS URL CORRIGIDA E MELHORIA NO FEEDBACK)
 function carregarQuiz(questao) {
-    document.getElementById('texto-enunciado').innerText = questao.qztitulo || "Conteúdo do quiz não encontrado.";
+    document.getElementById('texto-enunciado').innerText = questao.qztitulo || questao.titulo || "Conteúdo do quiz não encontrado.";
+
+    // 1. Lógica da Imagem (Coluna 'qzimagem')
+    const imgElement = document.getElementById('imagem-principal-bg');
+    
+    if (questao.qzimagem && imgElement) { 
+        // *** NOVO: Usa a função utilitária generateSupabaseUrl ***
+        imgElement.src = generateSupabaseUrl(questao.qzimagem);
+        imgElement.style.display = 'block'; 
+    } else if (imgElement) {
+        imgElement.style.display = 'none'; 
+        imgElement.src = ''; 
+    }
+
+    // 2. Lógica do Áudio da Pergunta (Coluna 'qzaudiopergunta')
+    const audioElementPergunta = document.getElementById('audio-player');
+    
+    if (questao.qzaudiopergunta && audioElementPergunta) {
+        // *** NOVO: Usa a função utilitária generateSupabaseUrl ***
+        audioElementPergunta.src = generateSupabaseUrl(questao.qzaudiopergunta);
+        audioElementPergunta.style.display = 'block'; 
+    } else if (audioElementPergunta) {
+        audioElementPergunta.style.display = 'none';
+        audioElementPergunta.src = ''; 
+    }
+
+    // 3. Renderização das Alternativas (Colunas 'opcoes' e 'resposta')
+    const containerAlternativas = document.getElementById('alternativas-container');
+    
+    if (questao.opcoes && Array.isArray(questao.opcoes)) { 
+        const alternativas = questao.opcoes; 
+        
+        alternativas.forEach((texto, index) => {
+            const textoOpcao = texto.trim(); 
+            const isAudioOpcao = textoOpcao.toLowerCase().endsWith('.mp3');
+
+            const button = document.createElement('button');
+            button.className = 'alternativa-btn';
+            
+            // NOVO: Adiciona o valor da alternativa para uso no feedback e seleção
+            button.setAttribute('data-value', textoOpcao); 
+
+            if (isAudioOpcao) {
+                // *** NOVO: Usa a função utilitária generateSupabaseUrl ***
+                const audioUrl = generateSupabaseUrl(textoOpcao);
+
+                // MANTIDO: Adiciona crossorigin="anonymous" (melhor prática de segurança)
+                const playerHtml = `
+                    <div class="audio-option-wrapper">
+                        <audio controls src="${audioUrl}" crossorigin="anonymous" style="width: 100%;"></audio>
+                        <span class="audio-filename-label" style="display: block; margin-top: 5px;">${textoOpcao}</span>
+                    </div>
+                `;
+                button.innerHTML = playerHtml;
+                
+            } else {
+                button.innerText = textoOpcao; 
+            }
+            
+            button.onclick = (event) => {
+                // Permite o clique APENAS no botão, ignorando o clique no player de áudio nativo
+                if (event.target.tagName === 'AUDIO' || event.target.tagName === 'SOURCE' || event.target.closest('audio')) {
+                    return; 
+                }
+                window.selecionarAlternativa(textoOpcao); 
+            };
+            
+            containerAlternativas.appendChild(button);
+        });
+    } else {
+        containerAlternativas.innerHTML = '<p style="color: red;">Erro: Formato da coluna OPCOES inválido ou vazio.</p>';
+    }
 }
