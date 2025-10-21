@@ -1,4 +1,4 @@
-// main.js - VERSÃO FINAL: Feedback CSS, Lógica de Imagem Corrigida
+// main.js - VERSÃO FINAL: Feedback CSS, Imagem Corrigida (Duplicação de URL e Tag IMG)
 
 // IMPORTAÇÃO CORRIGIDA: Inclui a função isLastQuestion
 import { carregarTodasQuestoes, getProximaQuestao, avancarQuestaoNaLista, supabase, isLastQuestion } from './supabase_client.js';
@@ -36,21 +36,17 @@ function showFeedback(acertou) {
 
     if (!overlay || !successBox || !failureBox) return;
 
-    // Garante que a caixa anterior está limpa
     successBox.classList.remove('show');
     failureBox.classList.remove('show');
 
-    // 1. Torna a sobreposição visível
     overlay.style.display = 'flex';
 
-    // 2. Aciona a animação CSS
     if (acertou) {
         successBox.classList.add('show');
     } else {
         failureBox.classList.add('show');
     }
     
-    // 3. Esconde tudo após a duração
     setTimeout(() => {
         overlay.style.display = 'none';
         successBox.classList.remove('show');
@@ -61,13 +57,10 @@ function showFeedback(acertou) {
 
 // ** Função para selecionar, verificar e dar feedback AUTOMATICAMENTE **
 window.selecionarAlternativa = function(textoAlternativa) {
-    // 1. Bloqueio Imediato: Se a resposta já foi dada, ignora o clique.
     if (respostaSelecionada !== null) {
         return;
     }
     
-    // Armazena a seleção como o TEXTO DA ALTERNATIVA (ex: "water.)
-    // Limpeza agressiva do texto selecionado (remove pontuação, espaços, padroniza para maiúscula)
     respostaSelecionada = String(textoAlternativa)
         .replace(/[.,;]/g, '')
         .replace(/\s/g, ' ') 
@@ -77,38 +70,30 @@ window.selecionarAlternativa = function(textoAlternativa) {
     const containerAlternativas = document.getElementById('alternativas-container');
     containerAlternativas.classList.add('alternativas-bloqueadas'); 
 
-    // 2. Lógica de Acerto/Erro e Feedback
     if (!questaoAtual) return; 
 
-    // BUSCA NA COLUNA 'resposta'
     const respostaCorretaRaw = questaoAtual.resposta; 
     
-    // Limpeza Agressiva do valor do Supabase (remove pontuação, espaços, padroniza para maiúscula)
     const respostaCorreta = String(respostaCorretaRaw)
         .replace(/[.,;]/g, '') 
         .replace(/\s/g, ' ') 
         .trim()     
         .toUpperCase();     
     
-    // A comparação agora é feita entre os TEXTOS das opções LIMPOS e MAIÚSCULOS
     const acertou = respostaSelecionada === respostaCorreta; 
 
     document.querySelectorAll('.alternativa-btn').forEach(btn => {
-        // Pega o texto completo do botão (ex: "water.")
         const btnTextoCompleto = btn.innerText; 
         
-        // Limpa o texto do botão para comparação com a resposta correta
         const btnTextoLimpo = String(btnTextoCompleto)
             .replace(/[.,;]/g, '')
             .replace(/\s/g, ' ')
             .trim()
             .toUpperCase();
         
-        // Remove qualquer estado de seleção anterior
         btn.classList.remove('selected', 'acertou', 'errou', 'correta');
         
         if (btnTextoCompleto === textoAlternativa) { 
-            // Alternativa que o usuário clicou.
             if (acertou) {
                 btn.classList.add('acertou');
             } else {
@@ -116,9 +101,8 @@ window.selecionarAlternativa = function(textoAlternativa) {
             }
         }
         
-        // Se errou, marca a correta
         if (!acertou && btnTextoLimpo === respostaCorreta) {
-            btn.classList.add('correta'); // Marca a resposta correta de verde
+            btn.classList.add('correta'); 
         }
     });
 
@@ -128,22 +112,19 @@ window.selecionarAlternativa = function(textoAlternativa) {
     console.log(`ACERTOU: ${acertou}`);
     console.log("-----------------------------------------------------------------");
     
-    // NOVO: Aciona o feedback CSS
     showFeedback(acertou);
 
-    // 3. Habilitar o botão de avançar
     document.getElementById('btn-proxima-questao').disabled = false;
 }
 
 
 // 3. Função central para exibir a questão ATUAL (NÃO AVANÇA O ÍNDICE)
 function exibirQuestaoAtual() {
-    // Resetar estado
     respostaSelecionada = null;
     
     const btnProxima = document.getElementById('btn-proxima-questao');
     if (btnProxima) {
-        btnProxima.disabled = true; // Botão desabilitado no início
+        btnProxima.disabled = true; 
         btnProxima.style.display = 'block'; 
         btnProxima.onclick = window.avancarQuiz; 
     }
@@ -151,34 +132,31 @@ function exibirQuestaoAtual() {
     const imagemElement = document.getElementById('imagem-principal-bg');
     if (imagemElement) {
         imagemElement.style.display = 'none';
-        imagemElement.style.backgroundImage = 'none';
+        // CRÍTICO: Limpa a imagem anterior, já que não é background-image
+        imagemElement.src = ''; 
     }
     
     const audioElement = document.getElementById('audio-player');
     if (audioElement) audioElement.style.display = 'none';
     
-    // LÊ a questão atual SEM avançar o índice
     questaoAtual = getProximaQuestao(); 
     
     const containerAlternativas = document.getElementById('alternativas-container');
     containerAlternativas.innerHTML = ''; 
-    containerAlternativas.classList.remove('alternativas-bloqueadas'); // Desbloqueia as alternativas
+    containerAlternativas.classList.remove('alternativas-bloqueadas'); 
 
-    // NOVO: Garante que a sobreposição de feedback está escondida
     const overlay = document.getElementById('feedback-overlay');
     if (overlay) overlay.style.display = 'none';
 
 
     if (questaoAtual) {
         
-        // Define o texto do botão com base se é a última questão
         let isLast = false;
         if (typeof isLastQuestion === 'function') {
             isLast = isLastQuestion();
         }
 
         if (btnProxima) {
-            // Define o texto solicitado: "Finish Questionnaire" ou "Next Question"
             btnProxima.innerText = isLast ? 'Finish Questionnaire' : 'Next Question';
         }
         
@@ -199,14 +177,12 @@ function exibirQuestaoAtual() {
 } 
 
 
-// ** Função para AVANÇAR o Quiz (Chamada APENAS pelo clique do botão) **
+// ** Função para AVANÇAR o Quiz **
 window.avancarQuiz = function() {
-    // 1. AVANÇA O ÍNDICE
     if (typeof avancarQuestaoNaLista === 'function') {
         avancarQuestaoNaLista();
     }
     
-    // 2. Exibe a próxima questão (que agora é a atual)
     exibirQuestaoAtual();
 }
 
@@ -240,7 +216,7 @@ window.onload = async function() {
 
 // 6. FUNÇÕES DE RENDERIZAÇÃO ESPECÍFICAS DE CADA MÓDULO
 
-// MÓDULO: Picture Description
+// MÓDULO: Picture Description (AGORA USA img.src)
 function carregarPictureDescription(questao) {
     
     document.getElementById('texto-enunciado').innerText = questao.pctitulo || "Enunciado não encontrado.";
@@ -249,19 +225,26 @@ function carregarPictureDescription(questao) {
     const imgElement = document.getElementById('imagem-principal-bg');
     
     if (questao.pcimagem && imgElement) {
-        // *** CORREÇÃO APLICADA AQUI: Removemos o .replace(/\s/g, '') ***
-        // Apenas limpa espaços nas bordas. O Supabase.storage.getPublicUrl lida com espaços internos.
         let nomeArquivoRaw = String(questao.pcimagem).trim(); 
+        let finalUrl;
+
+        // Verifica se é um URL completo ou apenas o nome do arquivo (Correção da duplicação de URL)
+        if (nomeArquivoRaw.startsWith('http')) {
+            finalUrl = nomeArquivoRaw;
+        } else {
+            const { data: publicUrl } = supabase.storage.from('connection').getPublicUrl(nomeArquivoRaw);
+            finalUrl = publicUrl.publicUrl;
+        }
         
-        const { data: publicUrl } = supabase.storage.from('connection').getPublicUrl(nomeArquivoRaw);
-        const finalUrl = publicUrl.publicUrl;
-        
-        imgElement.style.backgroundImage = `url('${finalUrl}')`;
+        // *** CRÍTICO: Usa .src para a tag IMG ***
+        imgElement.src = finalUrl; 
         imgElement.style.display = 'block';
-        console.log(`URL da Imagem Carregada: ${finalUrl}`); // DEBUG
+
+        console.log(`URL da Imagem Carregada (FINAL): ${finalUrl}`); 
 
     } else if(imgElement) {
         imgElement.style.display = 'none';
+        imgElement.src = ''; 
         console.log("A coluna 'pcimagem' está vazia ou não existe.");
     }
 
@@ -275,11 +258,9 @@ function carregarPictureDescription(questao) {
             const button = document.createElement('button');
             button.className = 'alternativa-btn';
             
-            // Atribui APENAS o texto da opção, SEM a letra (A, B, C)
             const textoOpcao = texto.trim(); 
             button.innerText = textoOpcao; 
             
-            // O clique agora passa o TEXTO da opção para a função de verificação
             button.onclick = (event) => window.selecionarAlternativa(textoOpcao); 
             containerAlternativas.appendChild(button);
         });

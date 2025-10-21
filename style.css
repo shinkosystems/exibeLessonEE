@@ -1,4 +1,4 @@
-/* style.css */
+/* style.css (COMPLETO E CORRIGIDO) */
 body {
     /* CORREÇÃO: Cor de fundo solicitada */
     background-color: #ececec; 
@@ -24,7 +24,6 @@ body {
     border-radius: 40px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
     
-    /* NOVO: Adicionado para permitir o posicionamento absoluto do Lottie */
     position: relative;
 }
 
@@ -35,21 +34,23 @@ body {
 }
 
 #midia-container {
+    /* MANTIDO: O contêiner pai centraliza a imagem e não tem altura fixa */
     text-align: center;
     margin-bottom: 20px;
+    display: flex;
+    justify-content: center;
 }
 
 #imagem-principal-bg {
-    width: 100%;
-    min-height: 250px; 
+    /* CRÍTICO: Removido min-height e estilos de background */
+    /* A tag <img> agora se ajusta automaticamente */
+    max-width: 300px; /* Ocupa a largura total do #midia-container (450px) */
+    max-height: 300px; /* CRÍTICO: Permite que a altura se ajuste à proporção da imagem */
     
-    display: flex; 
-    justify-content: center;
+    display: block; /* Garante que ela se comporte como um bloco */
     
-    background-color: #ddd; 
-    background-size: contain; 
-    background-repeat: no-repeat;
-    background-position: center;
+    background-color: transparent; /* Remove a cor de fundo cinza */
+    
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
@@ -115,7 +116,7 @@ body {
     pointer-events: none; 
 }
 
-/* ESTILOS PARA O NOVO BOTÃO DE CONTROLE DE FLUXO */
+/* ESTILOS PARA O BOTÃO DE CONTROLE DE FLUXO */
 #btn-proxima-questao {
     display: block;
     width: 100%;
@@ -145,31 +146,26 @@ body {
     background-color: #143d73; 
 }
 
-/* ESTILOS PARA AS ANIMAÇÕES LOTTIE */
+/* ESTILOS DE ANIMAÇÃO (mantidos, apesar do Lottie ter sido removido no JS/HTML) */
 #lottie-acerto, #lottie-erro {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%); /* Centraliza perfeitamente */
-    width: 250px; /* Tamanho da animação */
-    height: 250px;
-    pointer-events: none; /* Garante que não interfira nos cliques */
-    z-index: 2000; /* Garante que fique acima de tudo */
+    /* Estes estilos não são mais usados se o Lottie foi removido */
+    display: none; 
 }
 
-/* Estilo para a sobreposição que cobre a tela */
+/* ------------------ ESTILOS DE FEEDBACK DE ACERTO/ERRO ------------------ */
+
 #feedback-overlay {
-    position: fixed; /* Fixa na viewport */
+    position: fixed; 
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.1); /* Fundo semi-transparente */
+    background-color: rgba(0, 0, 0, 0.1); 
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 9999; /* Acima de tudo */
-    pointer-events: none; /* Não bloqueia o clique */
+    z-index: 9999; 
+    pointer-events: none; 
 }
 
 .feedback-box {
@@ -180,19 +176,18 @@ body {
     color: white;
     text-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
     
-    /* Posição inicial (fora de vista) */
     transform: scale(0); 
     opacity: 0;
-    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); /* Animação de "bounce" */
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
 }
 
 /* Estilos de cor */
 #feedback-success {
-    background-color: #76ed92; /* Verde */
+    background-color: #28a745; /* Verde mais escuro para maior contraste */
 }
 
 #feedback-failure {
-    background-color: #e06470; /* Vermelho */
+    background-color: #dc3545; /* Vermelho mais escuro para maior contraste */
 }
 
 /* Classe que aciona a animação */
