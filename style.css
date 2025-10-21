@@ -1,29 +1,25 @@
-/* style.css (VERSÃO FINAL COM CORREÇÃO DE ÁUDIO NO QUIZ) */
+/* style.css (COMPLETO) */
 body {
-    /* CORREÇÃO: Cor de fundo solicitada */
     background-color: #ececec; 
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     padding: 15px;
-    /* Centraliza o container principal na tela */
     display: flex;
     justify-content: center;
-    align-items: flex-start; /* Alinha no topo */
-    min-height: 100vh; /* Ocupa a altura total da viewport */
+    align-items: flex-start;
+    min-height: 100vh;
     margin: 0;
 }
 
 #app-container {
-    /* CORREÇÃO: Limites máximos do app */
     max-width: 450px;
     max-height: 1000px;
-    width: 100%; /* Garante que ocupe toda a largura máxima */
-    overflow-y: auto; /* Permite rolagem dentro do container se o conteúdo for maior que 1000px */
+    width: 100%;
+    overflow-y: auto;
     margin: 0;
     padding: 15px;
-    background-color: white; /* Adiciona fundo branco para o conteúdo principal */
+    background-color: white; 
     border-radius: 40px;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-    
     position: relative;
 }
 
@@ -34,36 +30,30 @@ body {
 }
 
 #midia-container {
-    /* MANTIDO: O contêiner pai centraliza a imagem e não tem altura fixa */
     text-align: center;
     margin-bottom: 20px;
     display: flex;
     justify-content: center;
-    /* Adicionado para empilhar imagem e áudio (pergunta) */
     flex-direction: column; 
     align-items: center;
 }
 
 #imagem-principal-bg {
     max-width: 300px;
-    width: 100%;
     max-height: 300px;
     height: 100%;
-    
-    display: block; /* Garante que ela se comporte como um bloco */
-    
-    background-color: transparent; /* Remove a cor de fundo cinza */
-    
+    display: block; 
+    background-color: transparent; 
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     margin-bottom: 20px;
 }
 
 #audio-player {
-    width: 100%; /* Garante que preencha a largura total do #midia-container */
-    height: 40px; /* Um tamanho fixo razoável para o player */
-    margin-bottom: 20px; /* Distância do enunciado/alternativas */
-    display: block; /* Garante que o player principal sempre se comporte como bloco */
+    width: 100%;
+    height: 40px;
+    margin-bottom: 20px;
+    display: block;
 }
 
 #texto-enunciado {
@@ -74,78 +64,166 @@ body {
     line-height: 1.6;
 }
 
-/* ------------------ ESTILOS DAS ALTERNATIVAS DE ÁUDIO ------------------ */
+/* ------------------ ESTILOS DAS ALTERNATIVAS ------------------ */
 
 .alternativa-btn {
-    /* CRÍTICO: Usa flex para centralizar o conteúdo (player) verticalmente */
+    /* Container PAI: Atua como a ROW (Flexbox) */
     display: flex; 
-    align-items: center; /* Centraliza o player verticalmente */
-    justify-content: flex-start; /* Alinha o conteúdo à esquerda */
+    align-items: center; 
     
     width: 100%;
-    height: 56px;
-    padding: 8px 15px; /* Adiciona padding vertical novamente (8px) */
+    min-height: 56px; 
     margin-bottom: 16px;
-    border: 0px solid #bdc3c7;
-    background-color: #ececec;
-    color: #2c3e50;
     
-    /* text-align: left não tem efeito com display: flex */
-    cursor: pointer;
-    border-radius: 40px;
-    transition: background-color 0.2s, border-color 0.2s;
-}
-
-.audio-option-wrapper {
-    /* Garante que o wrapper ocupa 100% da largura do botão, 
-       mas não interfere na centralização vertical feita pelo .alternativa-btn */
-    width: 100%;
-    display: block; 
-}
-
-.alternativa-btn audio {
-    /* Garante que o player de áudio dentro do botão use o espaço disponível */
-    width: 100%;
-    height: 40px; /* Altura visual do player */
-    background: transparent;
+    /* Reset de estilo do botão nativo */
+    padding: 0; 
     border: none;
-    display: block;
+    background-color: transparent; 
+    cursor: default; 
+    border-radius: 40px;
+    transition: none; 
 }
 
-.audio-filename-label {
-    /* CRÍTICO: ESCONDE o nome do arquivo/URL que estava aparecendo */
-    display: none !important;
+/* NOVA CLASSE: Define a row de áudio */
+.alternativa-btn.audio-row-container {
+    gap: 16px; /* Espaçamento entre Play e Título */
+    
+    /* Removido background e border do container pai */
+    background-color: transparent; 
+    border: none;
+    padding: 0; 
+    border-radius: 0; 
 }
 
-/* ... (MANTENHA OS ESTILOS DE HOVER, DESABILITADO, ACERTOU/ERROU ABAIXO) ... */
+/* Estilo do botão Play/Pause */
+.audio-control-btn {
+    flex-shrink: 0; 
+    width: 48px; 
+    height: 48px;
+    
+    border: none;
+    background-color: #143d73; /* Azul escuro */
+    color: white;
+    font-size: 1.2em;
+    
+    border-radius: 40px; 
+    
+    cursor: pointer;
+    transition: background-color 0.2s;
+    padding: 0;
+    line-height: 48px; 
+    
+    /* Margem para alinhar com o padding de 15px do #app-container */
+    margin-left: 15px; 
+}
 
-.alternativa-btn:hover:not(:disabled) {
+.audio-control-btn:hover {
+    background-color: #0d284f;
+}
+
+/* Estilo do botão de Seleção (Título da alternativa) */
+.audio-select-btn {
+    flex-grow: 1; 
+    text-align: left;
+    min-height: 48px; 
+    
+    /* CRÍTICO: Aplicado background e border aqui (SÓ NO TÍTULO) */
+    background-color: #ececec; 
+    border: 1px solid #bdc3c7; 
+    
+    color: #2c3e50;
+    font-size: 1em;
+    font-weight: 500;
+    cursor: pointer;
+    
+    border-radius: 40px; 
+    
+    transition: background-color 0.2s;
+    display: flex;
+    align-items: center;
+    
+    /* Padding para afastar o texto das bordas */
+    padding-left: 15px;
+    padding-right: 15px; 
+    
+    /* Margem para alinhar com o padding de 15px do #app-container */
+    margin-right: 15px;
+}
+
+.audio-select-btn:hover:not(:disabled) {
+    background-color: #e0e0e0;
+}
+
+
+/* ------------------ ESTADOS DE ACERTO/ERRO (ADAPTADO) ------------------ */
+
+/* ESTILO PADRÃO PARA ALTERNATIVAS DE TEXTO (sem áudio) */
+.alternativa-btn.audio-option-wrapper {
+    padding: 8px 15px;
+    background-color: #ececec;
+    border: 1px solid #bdc3c7;
+    border-radius: 40px;
+    cursor: pointer;
+}
+.alternativa-btn.audio-option-wrapper:hover:not(:disabled) {
     background-color: #ecf0f1;
     border-color: #3498db;
 }
 
-/* Estado DESABILITADO (após a resposta) */
-.alternativa-btn:disabled {
-    cursor: default;
-    opacity: 0.8;
+/* ** ESTADOS DE ACERTO/ERRO PARA ALTERNATIVA DE TEXTO SIMPLES ** */
+
+/* ACERTOU: Fundo Verde - PARA ALTERNATIVAS DE TEXTO SIMPLES */
+.alternativa-btn.audio-option-wrapper.acertou, 
+.alternativa-btn.audio-option-wrapper.correta {
+    background-color: #d4edda !important; /* Fundo Verde claro */
+    border-color: #1e7e34 !important; /* Borda Verde forte */
+    color: #1e7e34 !important; 
+    font-weight: bold;
 }
 
+/* ERROU: Fundo Vermelho - PARA ALTERNATIVAS DE TEXTO SIMPLES */
+.alternativa-btn.audio-option-wrapper.errou {
+    background-color: #f8d7da !important; /* Fundo Vermelho claro */
+    border-color: #dc3545 !important; /* Borda Vermelha forte */
+    color: #721c24 !important; 
+    font-weight: bold;
+}
+
+
+/* Estados para a NOVA ESTRUTURA (audio-row-container - ÁUDIO) */
+
+/* O container pai não precisa de borda/fundo */
+.alternativa-btn.audio-row-container.acertou, 
+.alternativa-btn.audio-row-container.correta,
+.alternativa-btn.audio-row-container.errou {
+    border: none !important; 
+}
 
 /* ACERTOU: Fundo Verde */
-.alternativa-btn.acertou, .alternativa-btn.correta {
+.alternativa-btn.audio-row-container.acertou .audio-select-btn, 
+.alternativa-btn.audio-row-container.correta .audio-select-btn {
     background-color: #d4edda !important; 
     border-color: #1e7e34 !important; 
-    color: #1e7e34;
+    color: #1e7e34 !important; 
     font-weight: bold;
+}
+.alternativa-btn.audio-row-container.acertou .audio-control-btn, 
+.alternativa-btn.audio-row-container.correta .audio-control-btn {
+    background-color: #1e7e34; 
 }
 
+
 /* ERROU: Fundo Vermelho */
-.alternativa-btn.errou {
+.alternativa-btn.audio-row-container.errou .audio-select-btn {
     background-color: #f8d7da !important; 
     border-color: #dc3545 !important; 
-    color: #721c24;
+    color: #721c24 !important; 
     font-weight: bold;
 }
+.alternativa-btn.audio-row-container.errou .audio-control-btn {
+    background-color: #dc3545; 
+}
+
 
 /* Bloqueia cliques nas alternativas após a resposta */
 .alternativas-bloqueadas .alternativa-btn {
@@ -182,12 +260,6 @@ body {
     background-color: #143d73; 
 }
 
-/* ESTILOS DE ANIMAÇÃO (mantidos, apesar do Lottie ter sido removido no JS/HTML) */
-#lottie-acerto, #lottie-erro {
-    /* Estes estilos não são mais usados se o Lottie foi removido */
-    display: none; 
-}
-
 /* ------------------ ESTILOS DE FEEDBACK DE ACERTO/ERRO ------------------ */
 
 #feedback-overlay {
@@ -219,15 +291,82 @@ body {
 
 /* Estilos de cor */
 #feedback-success {
-    background-color: #28a745; /* Verde mais escuro para maior contraste */
+    background-color: #28a745; 
 }
 
 #feedback-failure {
-    background-color: #dc3545; /* Vermelho mais escuro para maior contraste */
+    background-color: #dc3545; 
 }
 
 /* Classe que aciona a animação */
 .feedback-box.show {
     transform: scale(1);
     opacity: 1;
+}
+
+/* ------------------ ESTILOS DO MODAL DE EXPLICAÇÃO (NOVO) ------------------ */
+
+#explanation-modal-overlay {
+    position: fixed; 
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5); 
+    display: none; /* Inicia oculto */
+    justify-content: center;
+    align-items: center;
+    z-index: 10000; 
+    padding: 15px;
+}
+
+#explanation-modal {
+    max-width: 400px;
+    width: 100%;
+    padding: 25px;
+    
+    background-color: #ececec; /* Backgroundcolor solicitado */
+    border-radius: 40px; /* Border radius solicitado */
+    
+    box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+    text-align: center;
+    transform: scale(0.8);
+    opacity: 0;
+    transition: all 0.3s ease-out;
+}
+
+#explanation-modal.show {
+    transform: scale(1);
+    opacity: 1;
+}
+
+.modal-title {
+    color: #143d73;
+    margin-top: 0;
+    margin-bottom: 15px;
+}
+
+#explanation-text {
+    text-align: left;
+    margin-bottom: 20px;
+    line-height: 1.5;
+    white-space: pre-wrap; /* Mantém quebras de linha se houverem */
+    color: #2c3e50;
+}
+
+#close-explanation-btn {
+    width: 100%;
+    padding: 12px;
+    font-size: 1.1em;
+    font-weight: bold;
+    color: white;
+    border: none;
+    background-color: #143d73; 
+    border-radius: 40px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+#close-explanation-btn:hover {
+    background-color: #0d284f;
 }

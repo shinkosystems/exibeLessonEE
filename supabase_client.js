@@ -1,4 +1,4 @@
-// supabase_client.js - AJUSTADO para o fluxo de 2 etapas (Ler e Avançar separadamente)
+// supabase_client.js - AJUSTADO com nomenclatura aprimorada
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
@@ -48,8 +48,9 @@ export async function carregarTodasQuestoes(filtros) {
 
 /**
  * Retorna o dado da questão no índice ATUAL. NÃO AVANÇA O ÍNDICE.
+ * RENOMEADO de getProximaQuestao para CLAREZA.
  */
-export function getProximaQuestao() {
+export function getQuestaoAtual() {
     if (indiceAtual < listaDeQuestoes.length) {
         return listaDeQuestoes[indiceAtual];
     }
