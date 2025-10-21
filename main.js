@@ -1,4 +1,4 @@
-// main.js - VERSÃO DEFINITIVA: Lógica Lottie Integrada e Completa
+// main.js - VERSÃO FINAL COM FEEDBACK CSS SIMPLIFICADO
 
 // IMPORTAÇÃO CORRIGIDA: Inclui a função isLastQuestion
 import { carregarTodasQuestoes, getProximaQuestao, avancarQuestaoNaLista, supabase, isLastQuestion } from './supabase_client.js';
@@ -28,20 +28,33 @@ function getFiltrosDaUrl() {
     };
 }
 
-// ** Funções de Feedback Lottie **
-function showLottie(element) {
-    // Garante que a animação não está em loop
-    element.loop = false;
-    // Torna o elemento visível
-    element.style.display = 'block';
-    // Volta a animação para o início e toca
-    element.seek(0); 
-    element.play();
+// ** Funções de Feedback (NOVA LÓGICA CSS) **
+function showFeedback(acertou) {
+    const overlay = document.getElementById('feedback-overlay');
+    const successBox = document.getElementById('feedback-success');
+    const failureBox = document.getElementById('feedback-failure');
+
+    if (!overlay) return;
+
+    // Esconde ambos para garantir que apenas um apareça
+    successBox.classList.remove('show');
+    failureBox.classList.remove('show');
+
+    // 1. Torna a sobreposição visível
+    overlay.style.display = 'flex';
+
+    // 2. Aciona a animação CSS
+    if (acertou) {
+        successBox.classList.add('show');
+    } else {
+        failureBox.classList.add('show');
+    }
     
-    // Esconde o lottie após a duração da animação
+    // 3. Esconde tudo após a duração
     setTimeout(() => {
-        element.style.display = 'none';
-        element.stop(); // Interrompe para liberar recursos
+        overlay.style.display = 'none';
+        successBox.classList.remove('show');
+        failureBox.classList.remove('show');
     }, ANIMATION_DURATION);
 }
 
@@ -115,15 +128,8 @@ window.selecionarAlternativa = function(textoAlternativa) {
     console.log(`ACERTOU: ${acertou}`);
     console.log("-----------------------------------------------------------------");
     
-    // NOVO: Aciona animação Lottie
-    const lottieAcerto = document.getElementById('lottie-acerto');
-    const lottieErro = document.getElementById('lottie-erro');
-
-    if (acertou && lottieAcerto) {
-        showLottie(lottieAcerto);
-    } else if (!acertou && lottieErro) {
-        showLottie(lottieErro);
-    }
+    // NOVO: Aciona o feedback CSS
+    showFeedback(acertou);
 
     // 3. Habilitar o botão de avançar
     document.getElementById('btn-proxima-questao').disabled = false;
@@ -158,11 +164,9 @@ function exibirQuestaoAtual() {
     containerAlternativas.innerHTML = ''; 
     containerAlternativas.classList.remove('alternativas-bloqueadas'); // Desbloqueia as alternativas
 
-    // NOVO: Esconde as animações Lottie ao carregar uma nova questão
-    const lottieAcerto = document.getElementById('lottie-acerto');
-    const lottieErro = document.getElementById('lottie-erro');
-    if (lottieAcerto) lottieAcerto.style.display = 'none';
-    if (lottieErro) lottieErro.style.display = 'none';
+    // NOVO: Garante que a sobreposição de feedback está escondida
+    const overlay = document.getElementById('feedback-overlay');
+    if (overlay) overlay.style.display = 'none';
 
 
     if (questaoAtual) {
