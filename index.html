@@ -23,8 +23,28 @@
         <div id="alternativas-container">
             </div>
 
-    </div>
+        <button id="btn-proxima-questao" disabled>
+            Next Question
+        </button>
 
+        <lottie-player 
+            id="lottie-acerto" 
+            src="https://[SUA_URL_DO_PROJETO].supabase.co/storage/v1/object/public/connection/Confetti Effects Lottie Animation.json" 
+            mode="normal" 
+            style="display: none;"
+        ></lottie-player>
+        
+        <lottie-player 
+            id="lottie-erro" 
+            src="https://[SUA_URL_DO_PROJETO].supabase.co/storage/v1/object/public/connection/Bouncy Fail.json" 
+            mode="normal" 
+            style="display: none;"
+        ></lottie-player>
+
+    </div> 
+
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+    
     <script type="module" src="supabase_client.js"></script>
     <script type="module" src="main.js"></script>
 

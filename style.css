@@ -1,17 +1,35 @@
 /* style.css */
 body {
+    /* CORREÇÃO: Cor de fundo solicitada */
+    background-color: #ececec; 
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
     padding: 15px;
-    background-color: #f4f7f9;
+    /* Centraliza o container principal na tela */
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* Alinha no topo */
+    min-height: 100vh; /* Ocupa a altura total da viewport */
+    margin: 0;
 }
 
 #app-container {
-    max-width: 700px;
-    margin: 0 auto;
+    /* CORREÇÃO: Limites máximos do app */
+    max-width: 450px;
+    max-height: 1000px;
+    width: 100%; /* Garante que ocupe toda a largura máxima */
+    overflow-y: auto; /* Permite rolagem dentro do container se o conteúdo for maior que 1000px */
+    margin: 0;
+    padding: 15px;
+    background-color: white; /* Adiciona fundo branco para o conteúdo principal */
+    border-radius: 40px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+    
+    /* NOVO: Adicionado para permitir o posicionamento absoluto do Lottie */
+    position: relative;
 }
 
 #titulo-modulo {
-    color: #1abc9c;
+    color: #143d73;
     text-align: center;
     margin-bottom: 20px;
 }
@@ -23,14 +41,13 @@ body {
 
 #imagem-principal-bg {
     width: 100%;
-    min-height: 250px; /* Garante que a área seja visível */
+    min-height: 250px; 
     
-    /* Configurações para forçar o layout e centralizar (debug) */
     display: flex; 
     justify-content: center;
     
-    background-color: #ddd; /* Fundo cinza para debug */
-    background-size: contain; /* Ajusta a imagem dentro da div */
+    background-color: #ddd; 
+    background-size: contain; 
     background-repeat: no-repeat;
     background-position: center;
     border-radius: 8px;
@@ -43,10 +60,9 @@ body {
 }
 
 #texto-enunciado {
-    background-color: white;
-    padding: 15px;
-    border-left: 5px solid #3498db;
-    border-radius: 4px;
+    background-color: rgb(255, 255, 255);
+    padding: 16px;
+    border-radius: 40px;
     margin-bottom: 20px;
     line-height: 1.6;
 }
@@ -54,18 +70,89 @@ body {
 .alternativa-btn {
     display: block;
     width: 100%;
+    height: 56px;
     padding: 12px 15px;
-    margin-bottom: 8px;
-    border: 1px solid #bdc3c7;
-    background-color: white;
+    margin-bottom: 16px;
+    border: 0px solid #bdc3c7;
+    background-color: #ececec;
     color: #2c3e50;
     text-align: left;
     cursor: pointer;
-    border-radius: 6px;
+    border-radius: 40px;
     transition: background-color 0.2s, border-color 0.2s;
 }
 
-.alternativa-btn:hover {
+.alternativa-btn:hover:not(:disabled) {
     background-color: #ecf0f1;
     border-color: #3498db;
+}
+
+/* Estado DESABILITADO (após a resposta) */
+.alternativa-btn:disabled {
+    cursor: default;
+    opacity: 0.8;
+}
+
+
+/* ACERTOU: Fundo Verde */
+.alternativa-btn.acertou, .alternativa-btn.correta {
+    background-color: #d4edda !important; 
+    border-color: #1e7e34 !important; 
+    color: #1e7e34;
+    font-weight: bold;
+}
+
+/* ERROU: Fundo Vermelho */
+.alternativa-btn.errou {
+    background-color: #f8d7da !important; 
+    border-color: #dc3545 !important; 
+    color: #721c24;
+    font-weight: bold;
+}
+
+/* Bloqueia cliques nas alternativas após a resposta */
+.alternativas-bloqueadas .alternativa-btn {
+    pointer-events: none; 
+}
+
+/* ESTILOS PARA O NOVO BOTÃO DE CONTROLE DE FLUXO */
+#btn-proxima-questao {
+    display: block;
+    width: 100%;
+    padding: 15px;
+    margin-top: 30px;
+    font-size: 1.2em;
+    font-weight: bold;
+    color: white;
+    border: none;
+    border-radius: 40px;
+    cursor: pointer;
+    transition: background-color 0.3s;
+}
+
+/* Estado DESABILITADO (Padrão: Cinza) */
+#btn-proxima-questao:disabled {
+    background-color: #bdc3c7; 
+    cursor: not-allowed;
+}
+
+/* Estado HABILITADO (Azul forte) */
+#btn-proxima-questao:not(:disabled) {
+    background-color: #143d73; 
+}
+
+#btn-proxima-questao:not(:disabled):hover {
+    background-color: #143d73; 
+}
+
+/* ESTILOS PARA AS ANIMAÇÕES LOTTIE */
+#lottie-acerto, #lottie-erro {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%); /* Centraliza perfeitamente */
+    width: 250px; /* Tamanho da animação */
+    height: 250px;
+    pointer-events: none; /* Garante que não interfira nos cliques */
+    z-index: 2000; /* Garante que fique acima de tudo */
 }
