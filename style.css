@@ -129,7 +129,7 @@ body {
     
     /* CRÍTICO: Aplicado background e border aqui (SÓ NO TÍTULO) */
     background-color: #ececec; 
-    border: 1px solid #bdc3c7; 
+    border: 0px solid #bdc3c7; 
     
     color: #2c3e50;
     font-size: 1em;
@@ -161,7 +161,7 @@ body {
 .alternativa-btn.audio-option-wrapper {
     padding: 8px 15px;
     background-color: #ececec;
-    border: 1px solid #bdc3c7;
+    border: 0px solid #bdc3c7;
     border-radius: 40px;
     cursor: pointer;
 }
@@ -369,4 +369,36 @@ body {
 
 #close-explanation-btn:hover {
     background-color: #0d284f;
+}
+
+/* ------------------ NOVOS ESTILOS PARA EXTRA AUDIOS (LAYOUT 2x2) ------------------ */
+
+/* 1. Contêiner principal dos 4 botões Question */
+#extra-audios-questions-container {
+    display: flex;
+    flex-wrap: wrap;       /* CRÍTICO: Permite que os botões quebrem a linha */
+    justify-content: space-between; /* Distribui os itens para ocuparem as laterais */
+    gap: 16px; /* Espaçamento entre as linhas e colunas (horizontal e vertical) */
+    width: 100%; 
+    margin-top: 20px;
+    margin-bottom: 20px;
+}
+
+/* 2. Estilo dos botões individuais dentro do contêiner */
+/* Usamos a classe já existente .alternativa-btn.audio-option-wrapper */
+#extra-audios-questions-container .alternativa-btn.audio-option-wrapper {
+    /* CRÍTICO: Define a largura para forçar dois por linha */
+    /* Calcula (100% da largura - o 'gap' entre eles) dividido por 2 */
+    width: calc(50% - 8px); /* 50% - metade do gap de 16px */
+    
+    /* Remove a margem vertical desnecessária, pois o 'gap' gerencia o espaço */
+    margin-bottom: 0; 
+    
+    text-align: center;
+    justify-content: center; /* Centraliza o texto Question X */
+}
+
+/* Garante que o estado hover/padrão pareça um botão normal (já está bem definido) */
+#extra-audios-questions-container .alternativa-btn.audio-option-wrapper:hover {
+    background-color: #e0e0e0;
 }
