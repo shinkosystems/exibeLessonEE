@@ -1,4 +1,4 @@
-// modules/extra_audios.js (VERSÃO COMPLETA FINAL)
+// modules/extra_audios.js (VERSÃO COMPLETA FINAL E ATUALIZADA)
 
 import { supabase } from '../supabase_client.js'; 
 import { generateSupabaseUrl, getFiltrosDaUrl, limparStringResposta, showFeedback } from '../main.js'; 
@@ -7,8 +7,8 @@ let listaDePerguntas = [];
 let indiceAtual = 0;
 let subQuestoesCache = {}; // Cache: {idpergunta: [subquestoes]}
 
-// Novo: Armazena o estado de acerto/erro das sub-questões
-// Formato: { idpergunta: { numeroquestao: 'acertou' | 'errou' } }
+// ATUALIZADO: Armazena o estado de acerto/erro das sub-questões
+// Formato: { idpergunta: { numeroquestao: { status: 'acertou' | 'errou', respostaSelecionada: 'Texto da Alt' } } }
 let estadoRespostas = {}; 
 
 let subQuestaoAtual = null; 
@@ -19,7 +19,6 @@ let respostasSubQuestao = null;
 // -------------------------------------------------------------
 
 async function carregarDadosExtraAudios(filtros) {
-    // ... (Função carregarDadosExtraAudios permanece igual)
     const tituloElement = document.getElementById('titulo-modulo');
     
     console.log("--- DEBUG DE FILTROS BRUTOS (início da função) ---");
@@ -87,7 +86,6 @@ async function carregarDadosExtraAudios(filtros) {
 
 
 async function carregarSubQuestoes(idPerguntaPrincipal) {
-    // ... (Função carregarSubQuestoes permanece igual)
     if (subQuestoesCache[idPerguntaPrincipal]) {
         return subQuestoesCache[idPerguntaPrincipal];
     }
@@ -204,8 +202,12 @@ async function selecionarSubQuestao(questaoIndex) {
     // Verifica o estado atual de resposta
     const idPrincipal = perguntaPrincipal.id;
     const numQuestao = subQuestaoAtual.numeroquestao;
-    const estadoRespostaAtual = estadoRespostas[idPrincipal]?.[numQuestao];
-    let jaRespondida = !!estadoRespostaAtual;
+    
+    // ATUALIZADO: Carrega o objeto completo de estado
+    const estadoRespostaObjeto = estadoRespostas[idPrincipal]?.[numQuestao];
+    let jaRespondida = !!estadoRespostaObjeto;
+    const statusResposta = estadoRespostaObjeto?.status;
+    const respostaSelecionada = estadoRespostaObjeto?.respostaSelecionada; 
 
     // 2. Renderiza os botões de alternativa
     opcoesParaRenderizar.forEach(textoOpcao => {
@@ -216,24 +218,28 @@ async function selecionarSubQuestao(questaoIndex) {
         button.setAttribute('data-value', texto); 
         
         // ----------------------------------------------------
-        // ** BLOQUEIO E MARCAÇÃO DE ALTERNATIVA JÁ RESPONDIDA **
+        // ** BLOQUEIO E MARCAÇÃO DE ALTERNATIVA JÁ RESPONDIDA (CORREÇÃO) **
         // ----------------------------------------------------
         if (jaRespondida) {
             button.disabled = true; // Bloqueia o clique
             alternativasContainer.classList.add('alternativas-bloqueadas');
             
-            // Se já foi respondida, aplica a cor correta/incorreta
-            if (estadoRespostaAtual === 'acertou' && limparStringResposta(texto) === limparStringResposta(respostaCorreta)) {
+            const textoLimpo = limparStringResposta(texto);
+            const respostaCorretaLimpa = limparStringResposta(respostaCorreta);
+            const selecionadaLimpa = limparStringResposta(respostaSelecionada);
+            
+            if (statusResposta === 'acertou' && textoLimpo === respostaCorretaLimpa) {
+                // Se acertou, marca a correta
                 button.classList.add('acertou');
-            } else if (estadoRespostaAtual === 'errou') {
-                 // Para o caso de erro, precisamos saber qual alternativa foi selecionada
-                 // Como não armazenamos a alternativa selecionada, vamos apenas marcar a correta e a que foi clicada (se tivéssemos essa info)
-                 // Por simplicidade, vamos apenas marcar a correta em caso de erro.
-                 if (limparStringResposta(texto) === limparStringResposta(respostaCorreta)) {
+            } else if (statusResposta === 'errou') {
+                 // 1. Marca a correta com 'correta' (verde, se errou)
+                 if (textoLimpo === respostaCorretaLimpa) {
                      button.classList.add('correta');
                  }
-                 // OBS: Para ter a marcação vermelha, precisaríamos armazenar qual alternativa o usuário clicou.
-                 // Como não temos esse campo, focaremos na marcação verde da correta.
+                 // 2. Marca a que o usuário clicou com 'errou' (vermelho)
+                 if (textoLimpo === selecionadaLimpa) { 
+                     button.classList.add('errou');
+                 }
             }
         }
         // ----------------------------------------------------
@@ -250,7 +256,10 @@ async function selecionarSubQuestao(questaoIndex) {
             if (!estadoRespostas[idPrincipal]) {
                 estadoRespostas[idPrincipal] = {};
             }
-            estadoRespostas[idPrincipal][numQuestao] = acertou ? 'acertou' : 'errou';
+            estadoRespostas[idPrincipal][numQuestao] = {
+                status: acertou ? 'acertou' : 'errou',
+                respostaSelecionada: texto // ARMAZENA O TEXTO SELECIONADO
+            };
             // ----------------------------------------------------
 
             if (acertou) {
@@ -335,7 +344,7 @@ async function carregarExtraAudios(questaoPrincipal) {
         // ** APLICAÇÃO DO ESTILO DE FEEDBACK NOS BOTÕES (Correção 1) **
         // ----------------------------------------------------
         const numQuestao = subQuestoes[i].numeroquestao;
-        const resultado = estado[numQuestao];
+        const resultado = estado[numQuestao]?.status; // Pega apenas o status
         
         if (resultado === 'acertou') {
              button.classList.add('acertou');
@@ -354,16 +363,15 @@ async function carregarExtraAudios(questaoPrincipal) {
     const todasRespondidas = numSubQuestoes > 0 && numSubQuestoes === Object.keys(estado).length;
 
     if (btnProxima) {
-         // Se todas as sub-questões foram respondidas, o botão avança para o próximo áudio
+         // ATUALIZADO: Texto mais amigável
          btnProxima.disabled = !todasRespondidas;
-         btnProxima.innerText = todasRespondidas ? 'Next Question' : 'Next Question (DISABLED)'; // Texto alterado para feedback
+         btnProxima.innerText = todasRespondidas ? 'Next Question' : 'Answer all questions to proceed'; 
          btnProxima.onclick = avancarQuiz;
     }
 }
 
 
 function exibirQuestaoAtual() {
-    // ... (Função exibirQuestaoAtual e iniciarModulo permanecem iguais)
     const perguntaPrincipal = getPerguntaPrincipalAtual(); 
     
     if (perguntaPrincipal) {
@@ -377,8 +385,6 @@ function exibirQuestaoAtual() {
 }
 
 export async function iniciarModulo() {
-    // ... (Função iniciarModulo permanece igual)
-
     const filtros = getFiltrosDaUrl();
     const tituloElement = document.getElementById('titulo-modulo');
     
