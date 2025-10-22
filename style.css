@@ -41,7 +41,6 @@ body {
 #imagem-principal-bg {
     max-width: 300px;
     max-height: 300px;
-    height: 100%;
     display: block; 
     background-color: transparent; 
     border-radius: 8px;
