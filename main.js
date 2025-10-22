@@ -28,7 +28,7 @@ export function getFiltrosDaUrl() {
 // CRÍTICO: Função de Limpeza (com a correção do 160)
 export function limparStringResposta(str) {
     if (!str) return '';
-    // Corrigido para garantir a remoção do caractere 160 (\u00A0)
+    // ATENÇÃO: Corrigido para garantir a remoção do caractere 160 (\u00A0)
     return String(str)
         .replace(/[\u00A0\s]/g, ' ') 
         .replace(/[.,;?!]/g, '')
@@ -63,6 +63,7 @@ export function hideExplanation() {
     }, 300);
 }
 
+// ** FUNÇÃO REVISADA PARA ANIMAÇÃO CENTRALIZADA E CORRETA **
 export function showFeedback(acertou, questaoAtual) {
     const overlay = document.getElementById('feedback-overlay');
     const successBox = document.getElementById('feedback-success');
@@ -70,30 +71,54 @@ export function showFeedback(acertou, questaoAtual) {
 
     if (!overlay || !successBox || !failureBox) return;
 
+    // 1. Garante que os boxes não tenham a classe de animação inicialmente
     successBox.classList.remove('show');
     failureBox.classList.remove('show');
 
+    // CRÍTICO PARA CENTRALIZAÇÃO: ESCONDE o box que NÃO será usado.
+    if (acertou) {
+        failureBox.style.display = 'none'; // Esconde a caixa de erro
+        successBox.style.display = 'block'; // Garante que a caixa de sucesso esteja visível
+    } else {
+        successBox.style.display = 'none'; // Esconde a caixa de sucesso
+        failureBox.style.display = 'block'; // Garante que a caixa de erro esteja visível
+    }
+
+    // 2. Mostra o overlay usando 'flex'
     overlay.style.display = 'flex';
 
-    if (acertou) {
-        successBox.classList.add('show');
-    } else {
-        failureBox.classList.add('show');
-    }
-    
-    // Oculta o feedback após a animação
+    // 3. Adiciona a classe 'show' no box correto após um pequeno delay para que a transição funcione.
     setTimeout(() => {
-        overlay.style.display = 'none';
+        if (acertou) {
+            successBox.classList.add('show');
+        } else {
+            failureBox.classList.add('show');
+        }
+    }, 10); // Atraso mínimo de 10ms
+
+    // 4. Oculta o feedback após a duração da animação
+    setTimeout(() => {
+        // Primeiro remove a classe 'show' para acionar a animação de saída (scale(1) -> scale(0))
         successBox.classList.remove('show');
         failureBox.classList.remove('show');
+
+        // Segundo: Esconde o overlay DEPOIS que a transição de saída (0.4s) tiver tempo de rodar.
+        setTimeout(() => {
+            overlay.style.display = 'none';
         
-        // Chama o popup de explicação APÓS o feedback de erro sumir
-        if (!acertou && questaoAtual && questaoAtual.explanation) {
-             const moduloAtual = questaoAtual.lessons;
-             if (moduloAtual === 'Story Time' || moduloAtual === 'Grammar Practice') {
-                 showExplanation(questaoAtual.explanation);
-             }
-        }
+            // Reseta o display de ambos para 'block' (estado original)
+            successBox.style.display = 'block';
+            failureBox.style.display = 'block';
+
+            // Chama o popup de explicação APÓS o feedback de erro sumir
+            if (!acertou && questaoAtual && questaoAtual.explanation) {
+                const moduloAtual = questaoAtual.lessons;
+                if (moduloAtual === 'Story Time' || moduloAtual === 'Grammar Practice') {
+                    showExplanation(questaoAtual.explanation);
+                }
+            }
+        }, 400); // O 400ms deve ser igual ao 'transition: all 0.4s...' no style.css
+
     }, ANIMATION_DURATION);
 }
 

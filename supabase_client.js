@@ -10,6 +10,7 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 let listaDeQuestoes = [];
 let indiceAtual = 0;
+//comentario
 
 
 export async function carregarTodasQuestoes(filtros) {

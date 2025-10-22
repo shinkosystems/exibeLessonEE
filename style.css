@@ -260,7 +260,7 @@ body {
     background-color: #143d73; 
 }
 
-/* ------------------ ESTILOS DE FEEDBACK DE ACERTO/ERRO ------------------ */
+/* ------------------ ESTILOS DE FEEDBACK DE ACERTO/ERRO (REVISADO) ------------------ */
 
 #feedback-overlay {
     position: fixed; 
@@ -268,11 +268,17 @@ body {
     left: 0;
     width: 100%;
     height: 100%;
-    background-color: rgba(0, 0, 0, 0.1); 
+    /* ALTERAÇÃO: Fundo mais visível */
+    background-color: rgba(0, 0, 0, 0.4); 
+    
+    /* CRÍTICO: Flexbox para centralizar */
     display: flex;
     justify-content: center;
     align-items: center;
-    z-index: 9999; 
+    
+    /* ALTERAÇÃO: Garante que fique acima do modal (z-index 10000) */
+    z-index: 10001; 
+    
     pointer-events: none; 
 }
 
@@ -286,6 +292,7 @@ body {
     
     transform: scale(0); 
     opacity: 0;
+    /* Transição de 0.4s usada no JS para ocultar o overlay */
     transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); 
 }
 
@@ -298,7 +305,7 @@ body {
     background-color: #dc3545; 
 }
 
-/* Classe que aciona a animação */
+/* Classe que aciona a animação (controlada pelo JS) */
 .feedback-box.show {
     transform: scale(1);
     opacity: 1;
