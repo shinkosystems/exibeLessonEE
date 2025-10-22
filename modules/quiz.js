@@ -7,7 +7,7 @@ let questaoAtual = null;
 
 // RENDERIZAÇÃO PRINCIPAL DO QUIZ PADRÃO
 function carregarQuiz(questao) {
-    document.getElementById('texto-enunciado').innerText = questao.qztitulo || questao.titulo || "Conteúdo do quiz não encontrado.";
+    document.getElementById('texto-enunciado').innerText = questao.qztitulo || questao.titulo || "";
 
     // 1. Lógica da Imagem 
     const imgElement = document.getElementById('imagem-principal-bg');
