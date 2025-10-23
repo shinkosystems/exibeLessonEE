@@ -63,6 +63,24 @@ export function hideExplanation() {
     }, 300);
 }
 
+// ** NOVA FUNÇÃO: Pausa todos os áudios ativos **
+export function pauseAllAudios() {
+    // 1. Pausa o player principal
+    const mainAudioPlayer = document.getElementById('audio-player');
+    if (mainAudioPlayer && !mainAudioPlayer.paused) {
+        mainAudioPlayer.pause();
+    }
+
+    // 2. Pausa o áudio rastreado (de uma alternativa)
+    if (window.currentPlayingAudio) {
+        window.currentPlayingAudio.pause();
+        // Reseta o ícone de qualquer botão de play de alternativa que possa estar ativo
+        const playBtn = document.querySelector(`button[data-audio-url="${window.currentPlayingAudio.src}"]`);
+        if (playBtn) playBtn.innerHTML = '▶️';
+        window.currentPlayingAudio = null;
+    }
+}
+
 // ** FUNÇÃO REVISADA PARA ANIMAÇÃO CENTRALIZADA E CORRETA **
 export function showFeedback(acertou, questaoAtual) {
     const overlay = document.getElementById('feedback-overlay');
@@ -131,13 +149,8 @@ export function selecionarAlternativaGenerica(textoAlternativa, questaoAtual) {
         return;
     }
 
-    // Pausa qualquer áudio que esteja tocando
-    if (window.currentPlayingAudio) {
-        window.currentPlayingAudio.pause();
-        const playBtn = document.querySelector(`button[data-audio-url="${window.currentPlayingAudio.src}"]`);
-        if (playBtn) playBtn.innerHTML = '▶️';
-        window.currentPlayingAudio = null;
-    }
+    // CRÍTICO: Usa a nova função unificada de pausa
+    pauseAllAudios();
     
     let respostaParaComparar;
     
@@ -217,6 +230,13 @@ const MODULOS_MAP = {
 
 // FUNÇÃO DE INICIALIZAÇÃO DA PÁGINA (ROUTER)
 window.onload = async function() {
+    
+    // Adiciona o listener para fechar o modal de explicação
+    const closeBtn = document.getElementById('close-explanation-btn');
+    if (closeBtn) {
+        closeBtn.addEventListener('click', hideExplanation);
+    }
+    
     const filtros = getFiltrosDaUrl();
     const lesson = filtros.lessons;
     const tituloElement = document.getElementById('titulo-modulo');
