@@ -1,18 +1,56 @@
-// modules/extra_audios.js (VERSÃO COMPLETA FINAL E ATUALIZADA)
+// modules/extra_audios.js (Versão FINAL com o Nome da Tabela e Coluna Corrigidos)
 
 import { supabase } from '../supabase_client.js'; 
 import { generateSupabaseUrl, getFiltrosDaUrl, limparStringResposta, showFeedback } from '../main.js'; 
 
 let listaDePerguntas = []; 
 let indiceAtual = 0;
-let subQuestoesCache = {}; // Cache: {idpergunta: [subquestoes]}
+let subQuestoesCache = {}; 
 
-// ATUALIZADO: Armazena o estado de acerto/erro das sub-questões
-// Formato: { idpergunta: { numeroquestao: { status: 'acertou' | 'errou', respostaSelecionada: 'Texto da Alt' } } }
 let estadoRespostas = {}; 
 
 let subQuestaoAtual = null; 
 let respostasSubQuestao = null; 
+
+// -------------------------------------------------------------
+// FUNÇÃO LOCAL PARA SALVAR RESPOSTA DO EXTRA AUDIOS
+// -------------------------------------------------------------
+async function salvarRespostaExtraAudios(idaluno, idquestao, respostaAluno, pontuacao, lessonName) {
+    // CORREÇÃO CRÍTICA DO NOME DA TABELA: 'quetionarioextraaudios'
+    const nomeTabelaFinal = 'quetionarioextraaudios'; 
+
+    try {
+        const { data, error } = await supabase
+            .from(nomeTabelaFinal) 
+            .insert([
+                {
+                    idaluno: idaluno,
+                    idquestao: idquestao,
+                    // Nome da coluna corrigido anteriormente: resposta_aluno -> respostaaluno
+                    respostaaluno: respostaAluno, 
+                    pontuacao: pontuacao,
+                    lesson: lessonName
+                }
+            ]);
+
+        if (error) {
+            console.error(
+                'SUPABASE ERRO/SUCESSO: Erro Supabase ao salvar resposta (Extra Audios):', 
+                error
+            );
+            if (error.details) {
+                 console.error('Detalhes do Erro Supabase (Restrições/Tipos):', error.details);
+            }
+            return false;
+        }
+        console.log(`SUPABASE SUCESSO: Resposta Extra Audios salva com sucesso para idquestao: ${idquestao}, aluno: ${idaluno}`);
+        return true;
+    } catch (e) {
+        console.error('Erro geral ao salvar resposta (Extra Audios) no bloco catch:', e);
+        return false;
+    }
+}
+
 
 // -------------------------------------------------------------
 // FUNÇÕES DE BUSCA
@@ -21,9 +59,6 @@ let respostasSubQuestao = null;
 async function carregarDadosExtraAudios(filtros) {
     const tituloElement = document.getElementById('titulo-modulo');
     
-    console.log("--- DEBUG DE FILTROS BRUTOS (início da função) ---");
-    console.log(`Filtro Original URL: ${JSON.stringify(filtros)}`);
-    
     try {
         const fkbooksStr = String(filtros.fkbooks || '');
         const fkunidadesStr = String(filtros.fkunidades || '');
@@ -31,12 +66,6 @@ async function carregarDadosExtraAudios(filtros) {
 
         const fkbooksInt = parseInt(fkbooksStr);
         const fkunidadesInt = parseInt(fkunidadesStr);
-        
-        console.log("--- DEBUG DE FILTROS CONVERTIDOS ---");
-        console.log(`String FKBOOKS: ${fkbooksStr}, Convertido (INT): ${fkbooksInt}`);
-        console.log(`String FKUNIDADES: ${fkunidadesStr}, Convertido (INT): ${fkunidadesInt}`);
-        console.log(`String SUBUNIDADES: ${subunidadesStr}, Formatado (UPPER): ${subunidadesStr.toUpperCase()}`);
-        console.log("------------------------------------");
         
         if (isNaN(fkbooksInt) || isNaN(fkunidadesInt) || subunidadesStr === '') {
              console.error("Filtros de URL inválidos detectados (NaN ou string vazia).");
@@ -55,19 +84,11 @@ async function carregarDadosExtraAudios(filtros) {
         const { data, error } = await query
             .order('id', { ascending: true }); 
         
-        console.log("--- DEBUG DE RESULTADO SUPABASE ---");
-
         if (error) {
             console.error(`ERRO SUPABASE (VERIFIQUE RLS):`, error);
             tituloElement.innerText = `Erro de BD (Verifique RLS/Permissão): ${error.message}`;
             return false;
         }
-
-        if (data) {
-            console.log(`DADOS RETORNADOS (Length): ${data.length}`);
-        }
-        console.log("-----------------------------------");
-
 
         if (data && data.length > 0) {
             listaDePerguntas = data;
@@ -138,8 +159,6 @@ function avancarQuiz() {
  * Função para retornar à tela de seleção dos 4 botões de pergunta.
  */
 function voltarParaPerguntasPrincipais() {
-    
-    // Re-renderiza a tela do áudio principal (que mostra os 4 botões)
     const perguntaPrincipal = getPerguntaPrincipalAtual();
     if (perguntaPrincipal) {
         carregarExtraAudios(perguntaPrincipal);
@@ -167,10 +186,8 @@ async function selecionarSubQuestao(questaoIndex) {
     const alternativasContainer = document.getElementById('alternativas-container');
     const btnProxima = document.getElementById('btn-proxima-questao');
     
-    // Oculta botões e mostra alternativas
     document.getElementById('extra-audios-questions-container').style.display = 'none';
     
-    // Configura o contêiner de alternativas para layout vertical
     alternativasContainer.style.display = 'flex'; 
     alternativasContainer.style.flexDirection = 'column'; 
     alternativasContainer.style.gap = '10px';
@@ -178,13 +195,13 @@ async function selecionarSubQuestao(questaoIndex) {
     alternativasContainer.classList.remove('alternativas-bloqueadas');
 
     const opcoesRaw = subQuestaoAtual.alternativas || []; 
+    const pontuacaoQuestao = subQuestaoAtual.pontuacao || 0; 
     const respostaCorreta = subQuestaoAtual.resposta;
     const perguntaTexto = subQuestaoAtual.pergunta || `Responda a Questão ${subQuestaoAtual.numeroquestao}:`; 
     
     respostasSubQuestao = { correta: respostaCorreta};
     document.getElementById('texto-enunciado').innerText = perguntaTexto;
     
-    // Lógica robusta de parsing de alternativas
     let opcoesValidas = [];
     try {
         if (Array.isArray(opcoesRaw)) {
@@ -199,11 +216,9 @@ async function selecionarSubQuestao(questaoIndex) {
     let opcoesParaRenderizar = Array.from(new Set([...opcoesValidas, respostaCorreta]));
     opcoesParaRenderizar.sort(() => Math.random() - 0.5); 
     
-    // Verifica o estado atual de resposta
     const idPrincipal = perguntaPrincipal.id;
     const numQuestao = subQuestaoAtual.numeroquestao;
     
-    // ATUALIZADO: Carrega o objeto completo de estado
     const estadoRespostaObjeto = estadoRespostas[idPrincipal]?.[numQuestao];
     let jaRespondida = !!estadoRespostaObjeto;
     const statusResposta = estadoRespostaObjeto?.status;
@@ -217,11 +232,9 @@ async function selecionarSubQuestao(questaoIndex) {
         button.innerText = texto; 
         button.setAttribute('data-value', texto); 
         
-        // ----------------------------------------------------
-        // ** BLOQUEIO E MARCAÇÃO DE ALTERNATIVA JÁ RESPONDIDA (CORREÇÃO) **
-        // ----------------------------------------------------
+        // Lógica de bloqueio e marcação 
         if (jaRespondida) {
-            button.disabled = true; // Bloqueia o clique
+            button.disabled = true; 
             alternativasContainer.classList.add('alternativas-bloqueadas');
             
             const textoLimpo = limparStringResposta(texto);
@@ -229,38 +242,55 @@ async function selecionarSubQuestao(questaoIndex) {
             const selecionadaLimpa = limparStringResposta(respostaSelecionada);
             
             if (statusResposta === 'acertou' && textoLimpo === respostaCorretaLimpa) {
-                // Se acertou, marca a correta
                 button.classList.add('acertou');
             } else if (statusResposta === 'errou') {
-                 // 1. Marca a correta com 'correta' (verde, se errou)
                  if (textoLimpo === respostaCorretaLimpa) {
                      button.classList.add('correta');
                  }
-                 // 2. Marca a que o usuário clicou com 'errou' (vermelho)
                  if (textoLimpo === selecionadaLimpa) { 
                      button.classList.add('errou');
                  }
             }
         }
-        // ----------------------------------------------------
-
-        // Lógica de clique (só será executada se o botão não estiver disabled)
+        
+        // Lógica de clique
         button.onclick = () => {
             const acertou = limparStringResposta(texto) === limparStringResposta(respostaCorreta);
             
             alternativasContainer.classList.add('alternativas-bloqueadas');
 
-            // ----------------------------------------------------
-            // ** ATUALIZAÇÃO DO ESTADO DE RESPOSTA (Correção 1) **
-            // ----------------------------------------------------
+            // Atualização do estado local
             if (!estadoRespostas[idPrincipal]) {
                 estadoRespostas[idPrincipal] = {};
             }
             estadoRespostas[idPrincipal][numQuestao] = {
                 status: acertou ? 'acertou' : 'errou',
-                respostaSelecionada: texto // ARMAZENA O TEXTO SELECIONADO
+                respostaSelecionada: texto
             };
-            // ----------------------------------------------------
+            
+            // ** LÓGICA DE CADASTRO NO QUESTIONARIO EXTRA AUDIOS **
+            const filtros = getFiltrosDaUrl();
+            const idAluno = filtros.uuid;
+            const idQuestao = subQuestaoAtual.id; 
+            const pontuacaoFinal = acertou ? pontuacaoQuestao : 0; 
+            const lessonName = 'Extra Audios';
+            
+            if (idAluno && idQuestao) {
+                // Log #2: Verifica os dados de input ANTES de chamar o Supabase
+                console.log("DADOS P/ SALVAR:", {
+                    idaluno: idAluno, 
+                    idquestao: idQuestao, 
+                    resposta_aluno: texto, 
+                    pontuacao: pontuacaoFinal, 
+                    lesson: lessonName
+                });
+                
+                // Chamada da função de salvamento
+                salvarRespostaExtraAudios(idAluno, idQuestao, texto, pontuacaoFinal, lessonName); 
+            } else {
+                console.warn("Não foi possível salvar a resposta do Extra Audio: ID do Aluno ou ID da Questão ausente.");
+            }
+            // ** FIM DA LÓGICA DE CADASTRO **
 
             if (acertou) {
                  button.classList.add('acertou');
@@ -282,8 +312,8 @@ async function selecionarSubQuestao(questaoIndex) {
         alternativasContainer.appendChild(button);
     });
     
-    // Configura o botão de volta. Deve estar habilitado se já respondida.
-    btnProxima.disabled = !jaRespondida; // Desabilita se for a primeira vez
+    // Configura o botão de volta
+    btnProxima.disabled = !jaRespondida;
     btnProxima.innerText = 'Back to the questions page';
     btnProxima.onclick = voltarParaPerguntasPrincipais; 
 }
@@ -292,16 +322,15 @@ async function selecionarSubQuestao(questaoIndex) {
 // MÓDULO EXTRA AUDIOS (Renderiza o Audio e os 4 Botões da Pergunta Principal)
 async function carregarExtraAudios(questaoPrincipal) {
     
-    // 1. Limpa e esconde contêineres de resposta
     const alternativasContainer = document.getElementById('alternativas-container');
+    const extraAudiosContainer = document.getElementById('extra-audios-questions-container');
+
+    // Garante que a tela de alternativas suma ao voltar para a principal
     if (alternativasContainer) {
         alternativasContainer.innerHTML = '';
         alternativasContainer.style.display = 'none'; 
-        alternativasContainer.style.flexDirection = 'row'; 
-        alternativasContainer.style.gap = '0';
     }
     
-    const extraAudiosContainer = document.getElementById('extra-audios-questions-container');
     if (!extraAudiosContainer) {
         document.getElementById('texto-enunciado').innerText = 'Erro: Contêiner "extra-audios-questions-container" não encontrado no HTML.';
         return;
@@ -312,6 +341,9 @@ async function carregarExtraAudios(questaoPrincipal) {
     // 2. Renderiza o Áudio Principal
     const audioElement = document.getElementById('audio-player');
     if (questaoPrincipal.audio && audioElement) {
+        // Log #1: Loga o valor do caminho do áudio antes de codificar/usar
+        console.log("DEBUG AUDIO RAW (do DB):", questaoPrincipal.audio);
+        
         audioElement.src = generateSupabaseUrl(questaoPrincipal.audio);
         audioElement.style.display = 'block';
     } else {
@@ -331,7 +363,7 @@ async function carregarExtraAudios(questaoPrincipal) {
     }
     
     const idPrincipal = questaoPrincipal.id;
-    const estado = estadoRespostas[idPrincipal] || {}; // Carrega o estado de acerto/erro desta pergunta principal
+    const estado = estadoRespostas[idPrincipal] || {}; 
 
     for (let i = 0; i < numSubQuestoes; i++) {
         if (i >= 4) break; 
@@ -340,18 +372,14 @@ async function carregarExtraAudios(questaoPrincipal) {
         button.className = 'extra-audio-question-btn alternativa-btn audio-option-wrapper'; 
         button.innerText = `Question ${i + 1}`; 
         
-        // ----------------------------------------------------
-        // ** APLICAÇÃO DO ESTILO DE FEEDBACK NOS BOTÕES (Correção 1) **
-        // ----------------------------------------------------
         const numQuestao = subQuestoes[i].numeroquestao;
-        const resultado = estado[numQuestao]?.status; // Pega apenas o status
+        const resultado = estado[numQuestao]?.status; 
         
         if (resultado === 'acertou') {
              button.classList.add('acertou');
         } else if (resultado === 'errou') {
              button.classList.add('errou');
         }
-        // ----------------------------------------------------
         
         button.onclick = () => selecionarSubQuestao(i);
         
@@ -359,11 +387,9 @@ async function carregarExtraAudios(questaoPrincipal) {
     }
     
     const btnProxima = document.getElementById('btn-proxima-questao');
-    // Verifica se TODAS as sub-questões foram respondidas para liberar o "Next Question"
     const todasRespondidas = numSubQuestoes > 0 && numSubQuestoes === Object.keys(estado).length;
 
     if (btnProxima) {
-         // ATUALIZADO: Texto mais amigável
          btnProxima.disabled = !todasRespondidas;
          btnProxima.innerText = todasRespondidas ? 'Next Question' : 'Answer all questions to proceed'; 
          btnProxima.onclick = avancarQuiz;

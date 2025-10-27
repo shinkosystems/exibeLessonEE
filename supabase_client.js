@@ -75,3 +75,30 @@ export function isLastQuestion() {
     // Se o índice atual for igual ao último índice válido (length - 1), é a última.
     return indiceAtual === listaDeQuestoes.length - 1;
 }
+
+// ** MANTIDO: Função para salvar a resposta na tabela questionario **
+export async function salvarResposta(idaluno, idquestao, respostaAluno, pontuacao) {
+    try {
+        const { data, error } = await supabase
+            .from('questionario')
+            .insert([
+                {
+                    idaluno: idaluno,
+                    idquestao: idquestao,
+                    respostaaluno: respostaAluno,
+                    pontuacao: pontuacao
+                }
+            ]);
+
+        if (error) {
+            console.error('Erro Supabase ao salvar resposta:', error.message);
+            // ATENÇÃO: Verifique as políticas RLS na tabela 'questionario'
+            return false;
+        }
+        console.log(`Resposta salva para idquestao: ${idquestao}, aluno: ${idaluno}`);
+        return true;
+    } catch (e) {
+        console.error('Erro geral ao salvar resposta:', e);
+        return false;
+    }
+}

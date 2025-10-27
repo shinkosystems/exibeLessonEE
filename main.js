@@ -5,6 +5,10 @@ export const SUPABASE_BASE_URL = 'https://qazjyzqptdcnuezllbpr.supabase.co/stora
 export const ANIMATION_DURATION = 1500; 
 window.currentPlayingAudio = null; // Rastreia o áudio ativo para controle de UX
 
+// ** IMPORTAÇÃO NECESSÁRIA PARA SALVAR RESPOSTAS **
+import { salvarResposta } from './supabase_client.js'; 
+
+
 // --- UTILS DE URL E STRINGS ---
 
 export function generateSupabaseUrl(caminhoArquivo) {
@@ -22,7 +26,7 @@ export function getFiltrosDaUrl() {
         fkunidades: params.get('fkunidades'),
         subunidades: params.get('subunidades'),
         lessons: params.get('lessons'),
-        // ** ADIÇÃO DO UUID **
+        // UUID já foi adicionado
         uuid: params.get('uuid') 
     };
 }
@@ -180,6 +184,23 @@ export function selecionarAlternativaGenerica(textoAlternativa, questaoAtual) {
     }
     
     const acertou = respostaParaComparar === respostaCorreta; 
+
+    // ** LÓGICA DE CADASTRO NO QUESTIONARIO **
+    const filtros = getFiltrosDaUrl();
+    const idAluno = filtros.uuid;
+    // Pega o ID da questão da tabela 'aulaplus'
+    const idQuestao = questaoAtual.id; 
+    // Assume que 'pontuacao' é a coluna na tabela 'aulaplus'
+    const pontuacaoMaxima = questaoAtual.pontuacao || 0; 
+    const pontuacaoFinal = acertou ? pontuacaoMaxima : 0;
+    
+    if (idAluno && idQuestao) {
+        // Chamada assíncrona para salvar a resposta (não bloqueia o fluxo de UI)
+        salvarResposta(idAluno, idQuestao, textoAlternativa, pontuacaoFinal);
+    } else {
+        console.warn("Não foi possível salvar a resposta: ID do Aluno ou ID da Questão ausente.");
+    }
+    // ** FIM DA LÓGICA DE CADASTRO **
 
     // Lógica de feedback visual
     document.querySelectorAll('.alternativa-btn').forEach(btn => {
