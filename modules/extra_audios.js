@@ -1,4 +1,4 @@
-// modules/extra_audios.js (Versão FINAL com o Nome da Tabela e Coluna Corrigidos)
+// modules/extra_audios.js (Versão FINAL com Corrigida do Estado)
 
 import { supabase } from '../supabase_client.js'; 
 import { generateSupabaseUrl, getFiltrosDaUrl, limparStringResposta, showFeedback } from '../main.js'; 
@@ -7,7 +7,7 @@ let listaDePerguntas = [];
 let indiceAtual = 0;
 let subQuestoesCache = {}; 
 
-let estadoRespostas = {}; 
+let estadoRespostas = {}; // Usa idpergunta -> idsubquestao -> { status, respostaSelecionada }
 
 let subQuestaoAtual = null; 
 let respostasSubQuestao = null; 
@@ -186,6 +186,12 @@ async function selecionarSubQuestao(questaoIndex) {
     const alternativasContainer = document.getElementById('alternativas-container');
     const btnProxima = document.getElementById('btn-proxima-questao');
     
+    // CORREÇÃO #1: Limpeza de classes de feedback para evitar vazamento visual
+    document.querySelectorAll('.alternativa-btn').forEach(btn => {
+        btn.classList.remove('acertou', 'errou', 'correta');
+        btn.disabled = false;
+    });
+
     document.getElementById('extra-audios-questions-container').style.display = 'none';
     
     alternativasContainer.style.display = 'flex'; 
@@ -217,9 +223,11 @@ async function selecionarSubQuestao(questaoIndex) {
     opcoesParaRenderizar.sort(() => Math.random() - 0.5); 
     
     const idPrincipal = perguntaPrincipal.id;
-    const numQuestao = subQuestaoAtual.numeroquestao;
     
-    const estadoRespostaObjeto = estadoRespostas[idPrincipal]?.[numQuestao];
+    // CORREÇÃO #2: Usar o ID único da sub-questão para mapear o estado
+    const idSubQuestao = subQuestaoAtual.id; 
+    
+    const estadoRespostaObjeto = estadoRespostas[idPrincipal]?.[idSubQuestao];
     let jaRespondida = !!estadoRespostaObjeto;
     const statusResposta = estadoRespostaObjeto?.status;
     const respostaSelecionada = estadoRespostaObjeto?.respostaSelecionada; 
@@ -259,11 +267,11 @@ async function selecionarSubQuestao(questaoIndex) {
             
             alternativasContainer.classList.add('alternativas-bloqueadas');
 
-            // Atualização do estado local
+            // Atualização do estado local (USANDO ID ÚNICO)
             if (!estadoRespostas[idPrincipal]) {
                 estadoRespostas[idPrincipal] = {};
             }
-            estadoRespostas[idPrincipal][numQuestao] = {
+            estadoRespostas[idPrincipal][idSubQuestao] = { 
                 status: acertou ? 'acertou' : 'errou',
                 respostaSelecionada: texto
             };
@@ -364,6 +372,7 @@ async function carregarExtraAudios(questaoPrincipal) {
     
     const idPrincipal = questaoPrincipal.id;
     const estado = estadoRespostas[idPrincipal] || {}; 
+    let contadorRespondidas = 0; // Para a verificação do botão "Next Question"
 
     for (let i = 0; i < numSubQuestoes; i++) {
         if (i >= 4) break; 
@@ -372,13 +381,16 @@ async function carregarExtraAudios(questaoPrincipal) {
         button.className = 'extra-audio-question-btn alternativa-btn audio-option-wrapper'; 
         button.innerText = `Question ${i + 1}`; 
         
-        const numQuestao = subQuestoes[i].numeroquestao;
-        const resultado = estado[numQuestao]?.status; 
+        // CORREÇÃO #3: Usar o ID único da sub-questão para verificar o estado
+        const idSubQuestao = subQuestoes[i].id;
+        const resultado = estado[idSubQuestao]?.status;
         
         if (resultado === 'acertou') {
              button.classList.add('acertou');
+             contadorRespondidas++;
         } else if (resultado === 'errou') {
              button.classList.add('errou');
+             contadorRespondidas++;
         }
         
         button.onclick = () => selecionarSubQuestao(i);
@@ -387,7 +399,7 @@ async function carregarExtraAudios(questaoPrincipal) {
     }
     
     const btnProxima = document.getElementById('btn-proxima-questao');
-    const todasRespondidas = numSubQuestoes > 0 && numSubQuestoes === Object.keys(estado).length;
+    const todasRespondidas = numSubQuestoes > 0 && contadorRespondidas === numSubQuestoes;
 
     if (btnProxima) {
          btnProxima.disabled = !todasRespondidas;
