@@ -21,7 +21,9 @@ export function getFiltrosDaUrl() {
         fkbooks: params.get('fkbooks'),
         fkunidades: params.get('fkunidades'),
         subunidades: params.get('subunidades'),
-        lessons: params.get('lessons') 
+        lessons: params.get('lessons'),
+        // ** ADIÇÃO DO UUID **
+        uuid: params.get('uuid') 
     };
 }
 
@@ -225,7 +227,7 @@ const MODULOS_MAP = {
     'Story Time': './modules/story_time.js',
     'Grammar Practice': './modules/grammar_practice.js',
     'Quiz': './modules/quiz.js',
-    'Extra Audios': './modules/extra_audios.js', // Reutiliza o quiz.js
+    'Extra Audios': './modules/extra_audios.js', 
 };
 
 // FUNÇÃO DE INICIALIZAÇÃO DA PÁGINA (ROUTER)
