@@ -416,7 +416,7 @@ function exibirQuestaoAtual() {
         document.getElementById('titulo-modulo').innerText = 'Extra Audios'; 
         carregarExtraAudios(perguntaPrincipal); 
     } else {
-        document.getElementById('app-container').innerHTML = '<h1>Módulo Concluído!</h1><p>Parabéns!</p>';
+        document.getElementById('app-container').innerHTML = '<h1>Module Completed!</h1><p>Congratulations!</p>';
         const btnProxima = document.getElementById('btn-proxima-questao');
         if (btnProxima) btnProxima.style.display = 'none';
     }
