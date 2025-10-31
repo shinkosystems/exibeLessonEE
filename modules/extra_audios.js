@@ -15,7 +15,7 @@ let respostasSubQuestao = null;
 // -------------------------------------------------------------
 // FUNÇÃO LOCAL PARA SALVAR RESPOSTA DO EXTRA AUDIOS
 // -------------------------------------------------------------
-async function salvarRespostaExtraAudios(idaluno, idquestao, respostaAluno, pontuacao, lessonName) {
+async function salvarRespostaExtraAudios(idaluno, idquestao, respostaAluno, pontuacao, lessonName, idaudio) {
     // CORREÇÃO CRÍTICA DO NOME DA TABELA: 'quetionarioextraaudios'
     const nomeTabelaFinal = 'quetionarioextraaudios'; 
 
@@ -29,7 +29,8 @@ async function salvarRespostaExtraAudios(idaluno, idquestao, respostaAluno, pont
                     // Nome da coluna corrigido anteriormente: resposta_aluno -> respostaaluno
                     respostaaluno: respostaAluno, 
                     pontuacao: pontuacao,
-                    lesson: lessonName
+                    lesson: lessonName,
+                    idaudio: idaudio // <--- VALOR INSERIDO NA COLUNA IDAUDIO
                 }
             ]);
 
@@ -43,7 +44,7 @@ async function salvarRespostaExtraAudios(idaluno, idquestao, respostaAluno, pont
             }
             return false;
         }
-        console.log(`SUPABASE SUCESSO: Resposta Extra Audios salva com sucesso para idquestao: ${idquestao}, aluno: ${idaluno}`);
+        console.log(`SUPABASE SUCESSO: Resposta Extra Audios salva com sucesso para idquestao: ${idquestao}, aluno: ${idaluno}, idaudio: ${idaudio}`);
         return true;
     } catch (e) {
         console.error('Erro geral ao salvar resposta (Extra Audios) no bloco catch:', e);
@@ -283,6 +284,9 @@ async function selecionarSubQuestao(questaoIndex) {
             const pontuacaoFinal = acertou ? pontuacaoQuestao : 0; 
             const lessonName = 'Extra Audios';
             
+            // NOVO REQUISITO: Usar o valor de idQuestao na coluna idaudio
+            const idAudioParaSalvar = perguntaPrincipal.id;
+
             if (idAluno && idQuestao) {
                 // Log #2: Verifica os dados de input ANTES de chamar o Supabase
                 console.log("DADOS P/ SALVAR:", {
@@ -290,11 +294,19 @@ async function selecionarSubQuestao(questaoIndex) {
                     idquestao: idQuestao, 
                     resposta_aluno: texto, 
                     pontuacao: pontuacaoFinal, 
-                    lesson: lessonName
+                    lesson: lessonName,
+                    idaudio: idAudioParaSalvar // Log do novo campo
                 });
                 
-                // Chamada da função de salvamento
-                salvarRespostaExtraAudios(idAluno, idQuestao, texto, pontuacaoFinal, lessonName); 
+                // Chamada da função de salvamento: INCLUINDO idAudioParaSalvar como último argumento
+                salvarRespostaExtraAudios(
+                    idAluno, 
+                    idQuestao, 
+                    texto, 
+                    pontuacaoFinal, 
+                    lessonName,
+                    idAudioParaSalvar // <--- VALOR DE idquestao INSERIDO EM idaudio
+                ); 
             } else {
                 console.warn("Não foi possível salvar a resposta do Extra Audio: ID do Aluno ou ID da Questão ausente.");
             }
