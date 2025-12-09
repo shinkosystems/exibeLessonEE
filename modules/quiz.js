@@ -1,15 +1,10 @@
-// modules/quiz.js (APENAS MÓDULO QUIZ PADRÃO)
-
-import { carregarTodasQuestoes, getQuestaoAtual, avancarQuestaoNaLista, isLastQuestion } from '../supabase_client.js'; 
-import { generateSupabaseUrl, getFiltrosDaUrl, selecionarAlternativaGenerica, hideExplanation } from '../main.js'; 
+// modules/quiz.js - CORRIGIDO (Removido 'import' e usando funções globais)
 
 let questaoAtual = null;
 
-// RENDERIZAÇÃO PRINCIPAL DO QUIZ PADRÃO
 function carregarQuiz(questao) {
     document.getElementById('texto-enunciado').innerText = questao.qztitulo || questao.titulo || "";
 
-    // 1. Lógica da Imagem 
     const imgElement = document.getElementById('imagem-principal-bg');
     if (questao.qzimagem && imgElement) { 
         imgElement.src = generateSupabaseUrl(questao.qzimagem);
@@ -18,7 +13,6 @@ function carregarQuiz(questao) {
         imgElement.style.display = 'none'; 
     }
 
-    // 2. Lógica do Áudio da Pergunta 
     const audioElementPergunta = document.getElementById('audio-player');
     if (questao.qzaudiopergunta && audioElementPergunta) {
         audioElementPergunta.src = generateSupabaseUrl(questao.qzaudiopergunta);
@@ -27,14 +21,23 @@ function carregarQuiz(questao) {
         audioElementPergunta.style.display = 'none';
     }
 
-    // 3. Renderização das Alternativas
     const containerAlternativas = document.getElementById('alternativas-container');
+    containerAlternativas.innerHTML = ''; // Limpeza adicional
+
+    // CRÍTICO: Sugestão de correção para JSON string na coluna OPCOES
+    let alternativas = questao.opcoes;
+    let titulos = questao.titulosaudios;
+
+    if (typeof alternativas === 'string') {
+        try { alternativas = JSON.parse(alternativas); } catch (e) { alternativas = null; }
+    }
+    if (typeof titulos === 'string') {
+        try { titulos = JSON.parse(titulos); } catch (e) { titulos = null; }
+    }
     
-    if (questao.opcoes && Array.isArray(questao.opcoes)) { 
-        const alternativas = questao.opcoes; 
-        const titulos = (questao.titulosaudios && Array.isArray(questao.titulosaudios)) ? questao.titulosaudios : [];
+    if (alternativas && Array.isArray(alternativas)) { 
+        const titulosValidos = (titulos && Array.isArray(titulos)) ? titulos : [];
         
-        // Garante que não haja áudio tocando ao carregar
         if (window.currentPlayingAudio) {
             window.currentPlayingAudio.pause();
             const playBtn = document.querySelector(`button[data-audio-url="${window.currentPlayingAudio.src}"]`);
@@ -50,7 +53,7 @@ function carregarQuiz(questao) {
             button.setAttribute('data-value', textoOpcao); 
 
             if (isAudioOpcao) {
-                // Alternativa de Áudio (Dois Botões na mesma row)
+                // Alternativa de Áudio
                 button.className = 'alternativa-btn audio-row-container'; 
                 const audioUrl = generateSupabaseUrl(textoOpcao);
                 const audioPlayer = document.createElement('audio');
@@ -88,10 +91,10 @@ function carregarQuiz(questao) {
                 };
                 button.appendChild(playButton); 
 
-                // Botão de Seleção (Título)
+                // Botão de Seleção
                 const selectButton = document.createElement('button');
                 selectButton.className = 'audio-select-btn'; 
-                const tituloExibido = (titulos[index] && titulos[index].trim() !== '') ? titulos[index].trim() : textoOpcao;
+                const tituloExibido = (titulosValidos[index] && titulosValidos[index].trim() !== '') ? titulosValidos[index].trim() : textoOpcao;
                 selectButton.innerText = tituloExibido; 
                 
                 selectButton.onclick = (event) => {
@@ -115,7 +118,6 @@ function carregarQuiz(questao) {
 }
 
 
-// Lógica de navegação
 function avancarQuiz() {
     hideExplanation();
     avancarQuestaoNaLista();
@@ -130,7 +132,8 @@ function exibirQuestaoAtual() {
         btnProxima.onclick = avancarQuiz; 
     }
     
-    // Limpeza de componentes
+    // CORREÇÃO VISUAL
+    document.getElementById('extra-audios-questions-container').style.display = 'none';
     document.getElementById('imagem-principal-bg').style.display = 'none';
     document.getElementById('audio-player').style.display = 'none';
     const containerAlternativas = document.getElementById('alternativas-container');
@@ -147,7 +150,6 @@ function exibirQuestaoAtual() {
 
         document.getElementById('titulo-modulo').innerText = questaoAtual.lessons; 
         
-        // Chamada AGORA é APENAS para o Quiz Padrão
         carregarQuiz(questaoAtual); 
 
     } else {
@@ -159,7 +161,7 @@ function exibirQuestaoAtual() {
 /**
  * Ponto de entrada para o Router (main.js)
  */
-export async function iniciarModulo() {
+window.iniciarModuloQuiz = async function() {
     const closeBtn = document.getElementById('close-explanation-btn');
     if (closeBtn) {
         closeBtn.onclick = hideExplanation;

@@ -1,11 +1,7 @@
-// modules/picture_description.js
-
-import { carregarTodasQuestoes, getQuestaoAtual, avancarQuestaoNaLista, isLastQuestion } from '../supabase_client.js'; 
-import { generateSupabaseUrl, getFiltrosDaUrl, selecionarAlternativaGenerica, hideExplanation } from '../main.js'; 
+// modules/picture_description.js - CORRIGIDO (Removido 'import' e usando funções globais)
 
 let questaoAtual = null;
 
-// Funções específicas de renderização
 function carregarPictureDescription(questao) {
     
     document.getElementById('texto-enunciado').innerText = questao.pctitulo || "Enunciado não encontrado.";
@@ -21,9 +17,16 @@ function carregarPictureDescription(questao) {
     document.getElementById('audio-player').style.display = 'none';
 
     const containerAlternativas = document.getElementById('alternativas-container');
+    containerAlternativas.innerHTML = ''; // Limpeza adicional
+
+    // CRÍTICO: Sugestão de correção para JSON string
+    let opcoes = questao.opcoes;
+    if (typeof opcoes === 'string') {
+        try { opcoes = JSON.parse(opcoes); } catch (e) { opcoes = null; }
+    }
     
-    if (questao.opcoes && Array.isArray(questao.opcoes)) { 
-        questao.opcoes.forEach((texto) => {
+    if (opcoes && Array.isArray(opcoes)) { 
+        opcoes.forEach((texto) => {
             const button = document.createElement('button');
             button.className = 'alternativa-btn audio-option-wrapper'; 
             const textoOpcao = texto.trim(); 
@@ -39,7 +42,6 @@ function carregarPictureDescription(questao) {
 }
 
 
-// Lógica de navegação
 function avancarQuiz() {
     hideExplanation();
     avancarQuestaoNaLista();
@@ -47,7 +49,6 @@ function avancarQuiz() {
 }
 
 function exibirQuestaoAtual() {
-    // Lógica de reset (limpa a tela antes de exibir a nova questão)
     const btnProxima = document.getElementById('btn-proxima-questao');
     if (btnProxima) {
         btnProxima.disabled = true; 
@@ -55,6 +56,8 @@ function exibirQuestaoAtual() {
         btnProxima.onclick = avancarQuiz; 
     }
     
+    // CORREÇÃO VISUAL
+    document.getElementById('extra-audios-questions-container').style.display = 'none';
     document.getElementById('imagem-principal-bg').style.display = 'none';
     document.getElementById('audio-player').style.display = 'none';
     const containerAlternativas = document.getElementById('alternativas-container');
@@ -79,7 +82,7 @@ function exibirQuestaoAtual() {
 /**
  * Ponto de entrada para o Router (main.js)
  */
-export async function iniciarModulo() {
+window.iniciarModuloPictureDescription = async function() {
     const closeBtn = document.getElementById('close-explanation-btn');
     if (closeBtn) {
         closeBtn.onclick = hideExplanation;

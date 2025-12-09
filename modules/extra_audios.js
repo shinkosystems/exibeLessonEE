@@ -1,13 +1,12 @@
-// modules/extra_audios.js (Versão FINAL com Corrigida do Estado)
+// modules/extra_audios.js - CORRIGIDO (Removido 'import' e usando funções globais)
 
-import { supabase } from '../supabase_client.js'; 
-import { generateSupabaseUrl, getFiltrosDaUrl, limparStringResposta, showFeedback } from '../main.js'; 
+// O cliente supabase agora é global: window.supabaseClient
+// Funções agora são globais: generateSupabaseUrl, getFiltrosDaUrl, limparStringResposta, showFeedback, hideExplanation
 
 let listaDePerguntas = []; 
 let indiceAtual = 0;
 let subQuestoesCache = {}; 
-
-let estadoRespostas = {}; // Usa idpergunta -> idsubquestao -> { status, respostaSelecionada }
+let estadoRespostas = {}; 
 
 let subQuestaoAtual = null; 
 let respostasSubQuestao = null; 
@@ -16,29 +15,24 @@ let respostasSubQuestao = null;
 // FUNÇÃO LOCAL PARA SALVAR RESPOSTA DO EXTRA AUDIOS
 // -------------------------------------------------------------
 async function salvarRespostaExtraAudios(idaluno, idquestao, respostaAluno, pontuacao, lessonName, idaudio) {
-    // CORREÇÃO CRÍTICA DO NOME DA TABELA: 'quetionarioextraaudios'
     const nomeTabelaFinal = 'quetionarioextraaudios'; 
 
     try {
-        const { data, error } = await supabase
+        const { data, error } = await window.supabaseClient // ACESSO GLOBAL
             .from(nomeTabelaFinal) 
             .insert([
                 {
                     idaluno: idaluno,
                     idquestao: idquestao,
-                    // Nome da coluna corrigido anteriormente: resposta_aluno -> respostaaluno
                     respostaaluno: respostaAluno, 
                     pontuacao: pontuacao,
                     lesson: lessonName,
-                    idaudio: idaudio // <--- VALOR INSERIDO NA COLUNA IDAUDIO
+                    idaudio: idaudio 
                 }
             ]);
 
         if (error) {
-            console.error(
-                'SUPABASE ERRO/SUCESSO: Erro Supabase ao salvar resposta (Extra Audios):', 
-                error
-            );
+            console.error('SUPABASE ERRO/SUCESSO: Erro Supabase ao salvar resposta (Extra Audios):', error);
             if (error.details) {
                  console.error('Detalhes do Erro Supabase (Restrições/Tipos):', error.details);
             }
@@ -74,7 +68,7 @@ async function carregarDadosExtraAudios(filtros) {
              return false;
         }
 
-        let query = supabase
+        let query = window.supabaseClient // ACESSO GLOBAL
             .from('extraaudiostable')
             .select('*');
 
@@ -113,7 +107,7 @@ async function carregarSubQuestoes(idPerguntaPrincipal) {
     }
     
     try {
-        const { data, error } = await supabase
+        const { data, error } = await window.supabaseClient // ACESSO GLOBAL
             .from('extraaudios')
             .select('*')
             .eq('idpergunta', idPerguntaPrincipal) 
@@ -156,9 +150,6 @@ function avancarQuiz() {
     exibirQuestaoAtual();
 }
 
-/**
- * Função para retornar à tela de seleção dos 4 botões de pergunta.
- */
 function voltarParaPerguntasPrincipais() {
     const perguntaPrincipal = getPerguntaPrincipalAtual();
     if (perguntaPrincipal) {
@@ -168,9 +159,6 @@ function voltarParaPerguntasPrincipais() {
     }
 }
 
-/**
- * Função que renderiza a sub-questão e as alternativas.
- */
 async function selecionarSubQuestao(questaoIndex) {
     const perguntaPrincipal = getPerguntaPrincipalAtual();
     if (!perguntaPrincipal) return;
@@ -187,7 +175,6 @@ async function selecionarSubQuestao(questaoIndex) {
     const alternativasContainer = document.getElementById('alternativas-container');
     const btnProxima = document.getElementById('btn-proxima-questao');
     
-    // CORREÇÃO #1: Limpeza de classes de feedback para evitar vazamento visual
     document.querySelectorAll('.alternativa-btn').forEach(btn => {
         btn.classList.remove('acertou', 'errou', 'correta');
         btn.disabled = false;
@@ -224,8 +211,6 @@ async function selecionarSubQuestao(questaoIndex) {
     opcoesParaRenderizar.sort(() => Math.random() - 0.5); 
     
     const idPrincipal = perguntaPrincipal.id;
-    
-    // CORREÇÃO #2: Usar o ID único da sub-questão para mapear o estado
     const idSubQuestao = subQuestaoAtual.id; 
     
     const estadoRespostaObjeto = estadoRespostas[idPrincipal]?.[idSubQuestao];
@@ -246,9 +231,9 @@ async function selecionarSubQuestao(questaoIndex) {
             button.disabled = true; 
             alternativasContainer.classList.add('alternativas-bloqueadas');
             
-            const textoLimpo = limparStringResposta(texto);
-            const respostaCorretaLimpa = limparStringResposta(respostaCorreta);
-            const selecionadaLimpa = limparStringResposta(respostaSelecionada);
+            const textoLimpo = limparStringResposta(texto); // Função global
+            const respostaCorretaLimpa = limparStringResposta(respostaCorreta); // Função global
+            const selecionadaLimpa = limparStringResposta(respostaSelecionada); // Função global
             
             if (statusResposta === 'acertou' && textoLimpo === respostaCorretaLimpa) {
                 button.classList.add('acertou');
@@ -264,11 +249,10 @@ async function selecionarSubQuestao(questaoIndex) {
         
         // Lógica de clique
         button.onclick = () => {
-            const acertou = limparStringResposta(texto) === limparStringResposta(respostaCorreta);
+            const acertou = limparStringResposta(texto) === limparStringResposta(respostaCorreta); // Função global
             
             alternativasContainer.classList.add('alternativas-bloqueadas');
 
-            // Atualização do estado local (USANDO ID ÚNICO)
             if (!estadoRespostas[idPrincipal]) {
                 estadoRespostas[idPrincipal] = {};
             }
@@ -277,75 +261,56 @@ async function selecionarSubQuestao(questaoIndex) {
                 respostaSelecionada: texto
             };
             
-            // ** LÓGICA DE CADASTRO NO QUESTIONARIO EXTRA AUDIOS **
-            const filtros = getFiltrosDaUrl();
+            // LÓGICA DE CADASTRO NO QUESTIONARIO EXTRA AUDIOS
+            const filtros = getFiltrosDaUrl(); // Função global
             const idAluno = filtros.uuid;
             const idQuestao = subQuestaoAtual.id; 
             const pontuacaoFinal = acertou ? pontuacaoQuestao : 0; 
             const lessonName = 'Extra Audios';
-            
-            // NOVO REQUISITO: Usar o valor de idQuestao na coluna idaudio
             const idAudioParaSalvar = perguntaPrincipal.id;
 
             if (idAluno && idQuestao) {
-                // Log #2: Verifica os dados de input ANTES de chamar o Supabase
-                console.log("DADOS P/ SALVAR:", {
-                    idaluno: idAluno, 
-                    idquestao: idQuestao, 
-                    resposta_aluno: texto, 
-                    pontuacao: pontuacaoFinal, 
-                    lesson: lessonName,
-                    idaudio: idAudioParaSalvar // Log do novo campo
-                });
-                
-                // Chamada da função de salvamento: INCLUINDO idAudioParaSalvar como último argumento
                 salvarRespostaExtraAudios(
                     idAluno, 
                     idQuestao, 
                     texto, 
                     pontuacaoFinal, 
                     lessonName,
-                    idAudioParaSalvar // <--- VALOR DE idquestao INSERIDO EM idaudio
+                    idAudioParaSalvar 
                 ); 
             } else {
                 console.warn("Não foi possível salvar a resposta do Extra Audio: ID do Aluno ou ID da Questão ausente.");
             }
-            // ** FIM DA LÓGICA DE CADASTRO **
-
+            
             if (acertou) {
                  button.classList.add('acertou');
-                 showFeedback(true, perguntaPrincipal); 
+                 showFeedback(true, perguntaPrincipal); // Função global
             } else {
                  button.classList.add('errou');
-                 // Marca a correta para feedback visual
                  document.querySelectorAll('.alternativa-btn').forEach(btn => {
                      if (limparStringResposta(btn.getAttribute('data-value')) === limparStringResposta(respostaCorreta)) {
                          btn.classList.add('correta');
                      }
                  });
-                 showFeedback(false, perguntaPrincipal);
+                 showFeedback(false, perguntaPrincipal); // Função global
             }
             
-            // HABILITA o botão para voltar, após responder
             btnProxima.disabled = false;
         };
         alternativasContainer.appendChild(button);
     });
     
-    // Configura o botão de volta
     btnProxima.disabled = !jaRespondida;
     btnProxima.innerText = 'Back to the questions page';
     btnProxima.onclick = voltarParaPerguntasPrincipais; 
 }
 
 
-// MÓDULO EXTRA AUDIOS (Renderiza o Audio e os 4 Botões da Pergunta Principal)
 async function carregarExtraAudios(questaoPrincipal) {
     
     const alternativasContainer = document.getElementById('alternativas-container');
     const extraAudiosContainer = document.getElementById('extra-audios-questions-container');
 
-    // Garante que a tela de alternativas suma ao voltar para a principal
     if (alternativasContainer) {
         alternativasContainer.innerHTML = '';
         alternativasContainer.style.display = 'none'; 
@@ -358,19 +323,14 @@ async function carregarExtraAudios(questaoPrincipal) {
 
     document.getElementById('texto-enunciado').innerText = 'Listen and select the question you want to answer:';
 
-    // 2. Renderiza o Áudio Principal
     const audioElement = document.getElementById('audio-player');
     if (questaoPrincipal.audio && audioElement) {
-        // Log #1: Loga o valor do caminho do áudio antes de codificar/usar
-        console.log("DEBUG AUDIO RAW (do DB):", questaoPrincipal.audio);
-        
-        audioElement.src = generateSupabaseUrl(questaoPrincipal.audio);
+        audioElement.src = generateSupabaseUrl(questaoPrincipal.audio); // Função global
         audioElement.style.display = 'block';
     } else {
         audioElement.style.display = 'none';
     }
 
-    // 3. Renderiza os 4 Botões
     extraAudiosContainer.style.display = 'flex'; 
     extraAudiosContainer.innerHTML = ''; 
 
@@ -384,7 +344,7 @@ async function carregarExtraAudios(questaoPrincipal) {
     
     const idPrincipal = questaoPrincipal.id;
     const estado = estadoRespostas[idPrincipal] || {}; 
-    let contadorRespondidas = 0; // Para a verificação do botão "Next Question"
+    let contadorRespondidas = 0; 
 
     for (let i = 0; i < numSubQuestoes; i++) {
         if (i >= 4) break; 
@@ -393,7 +353,6 @@ async function carregarExtraAudios(questaoPrincipal) {
         button.className = 'extra-audio-question-btn alternativa-btn audio-option-wrapper'; 
         button.innerText = `Question ${i + 1}`; 
         
-        // CORREÇÃO #3: Usar o ID único da sub-questão para verificar o estado
         const idSubQuestao = subQuestoes[i].id;
         const resultado = estado[idSubQuestao]?.status;
         
@@ -434,8 +393,14 @@ function exibirQuestaoAtual() {
     }
 }
 
-export async function iniciarModulo() {
-    const filtros = getFiltrosDaUrl();
+// Ponto de entrada do Router
+window.iniciarModuloExtraAudios = async function() {
+    const closeBtn = document.getElementById('close-explanation-btn');
+    if (closeBtn) {
+        closeBtn.onclick = hideExplanation; // Função global
+    }
+
+    const filtros = getFiltrosDaUrl(); // Função global
     const tituloElement = document.getElementById('titulo-modulo');
     
     if (!filtros.fkbooks || !filtros.fkunidades || !filtros.subunidades) {

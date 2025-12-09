@@ -1,17 +1,16 @@
-// main.js - ROUTER E UTILITÁRIOS EXPORTÁVEIS
+// main.js - ROUTER E UTILITÁRIOS GLOBAIS (SEM EXPORT/IMPORT)
 
 // CONFIGURAÇÕES GLOBAIS
-export const SUPABASE_BASE_URL = 'https://qazjyzqptdcnuezllbpr.supabase.co/storage/v1/object/public/connection/'; 
-export const ANIMATION_DURATION = 1500; 
+const SUPABASE_BASE_URL = 'https://qazjyzqptdcnuezllbpr.supabase.co/storage/v1/object/public/connection/'; 
+const ANIMATION_DURATION = 1500; 
 window.currentPlayingAudio = null; // Rastreia o áudio ativo para controle de UX
 
-// ** IMPORTAÇÃO NECESSÁRIA PARA SALVAR RESPOSTAS **
-import { salvarResposta } from './supabase_client.js'; 
+// A função salvarResposta agora é global (window.salvarResposta) e não precisa ser importada.
 
 
 // --- UTILS DE URL E STRINGS ---
 
-export function generateSupabaseUrl(caminhoArquivo) {
+function generateSupabaseUrl(caminhoArquivo) {
     caminhoArquivo = String(caminhoArquivo).trim();
     if (caminhoArquivo.startsWith('http')) {
         return caminhoArquivo;
@@ -19,22 +18,19 @@ export function generateSupabaseUrl(caminhoArquivo) {
     return SUPABASE_BASE_URL + encodeURIComponent(caminhoArquivo);
 }
 
-export function getFiltrosDaUrl() {
+function getFiltrosDaUrl() {
     const params = new URLSearchParams(window.location.search);
     return {
         fkbooks: params.get('fkbooks'),
         fkunidades: params.get('fkunidades'),
         subunidades: params.get('subunidades'),
         lessons: params.get('lessons'),
-        // UUID já foi adicionado
         uuid: params.get('uuid') 
     };
 }
 
-// CRÍTICO: Função de Limpeza (com a correção do 160)
-export function limparStringResposta(str) {
+function limparStringResposta(str) {
     if (!str) return '';
-    // ATENÇÃO: Corrigido para garantir a remoção do caractere 160 (\u00A0)
     return String(str)
         .replace(/[\u00A0\s]/g, ' ') 
         .replace(/[.,;?!]/g, '')
@@ -45,7 +41,7 @@ export function limparStringResposta(str) {
 
 // --- UTILS DE FEEDBACK E MODAL ---
 
-export function showExplanation(explanationText) {
+function showExplanation(explanationText) {
     const modalOverlay = document.getElementById('explanation-modal-overlay');
     const modal = document.getElementById('explanation-modal');
     const explanationDiv = document.getElementById('explanation-text');
@@ -58,7 +54,7 @@ export function showExplanation(explanationText) {
     }
 }
 
-export function hideExplanation() {
+function hideExplanation() {
     const modalOverlay = document.getElementById('explanation-modal-overlay');
     const modal = document.getElementById('explanation-modal');
 
@@ -69,93 +65,78 @@ export function hideExplanation() {
     }, 300);
 }
 
-// ** NOVA FUNÇÃO: Pausa todos os áudios ativos **
-export function pauseAllAudios() {
-    // 1. Pausa o player principal
+function pauseAllAudios() {
     const mainAudioPlayer = document.getElementById('audio-player');
     if (mainAudioPlayer && !mainAudioPlayer.paused) {
         mainAudioPlayer.pause();
     }
 
-    // 2. Pausa o áudio rastreado (de uma alternativa)
     if (window.currentPlayingAudio) {
         window.currentPlayingAudio.pause();
-        // Reseta o ícone de qualquer botão de play de alternativa que possa estar ativo
         const playBtn = document.querySelector(`button[data-audio-url="${window.currentPlayingAudio.src}"]`);
         if (playBtn) playBtn.innerHTML = '▶️';
         window.currentPlayingAudio = null;
     }
 }
 
-// ** FUNÇÃO REVISADA PARA ANIMAÇÃO CENTRALIZADA E CORRETA **
-export function showFeedback(acertou, questaoAtual) {
+function showFeedback(acertou, questaoAtual) {
     const overlay = document.getElementById('feedback-overlay');
     const successBox = document.getElementById('feedback-success');
     const failureBox = document.getElementById('feedback-failure');
 
     if (!overlay || !successBox || !failureBox) return;
 
-    // 1. Garante que os boxes não tenham a classe de animação inicialmente
     successBox.classList.remove('show');
     failureBox.classList.remove('show');
 
-    // CRÍTICO PARA CENTRALIZAÇÃO: ESCONDE o box que NÃO será usado.
     if (acertou) {
-        failureBox.style.display = 'none'; // Esconde a caixa de erro
-        successBox.style.display = 'block'; // Garante que a caixa de sucesso esteja visível
+        failureBox.style.display = 'none'; 
+        successBox.style.display = 'block'; 
     } else {
-        successBox.style.display = 'none'; // Esconde a caixa de sucesso
-        failureBox.style.display = 'block'; // Garante que a caixa de erro esteja visível
+        successBox.style.display = 'none'; 
+        failureBox.style.display = 'block'; 
     }
 
-    // 2. Mostra o overlay usando 'flex'
     overlay.style.display = 'flex';
 
-    // 3. Adiciona a classe 'show' no box correto após um pequeno delay para que a transição funcione.
     setTimeout(() => {
         if (acertou) {
             successBox.classList.add('show');
         } else {
             failureBox.classList.add('show');
         }
-    }, 10); // Atraso mínimo de 10ms
+    }, 10); 
 
-    // 4. Oculta o feedback após a duração da animação
     setTimeout(() => {
-        // Primeiro remove a classe 'show' para acionar a animação de saída (scale(1) -> scale(0))
         successBox.classList.remove('show');
         failureBox.classList.remove('show');
 
-        // Segundo: Esconde o overlay DEPOIS que a transição de saída (0.4s) tiver tempo de rodar.
         setTimeout(() => {
             overlay.style.display = 'none';
         
-            // Reseta o display de ambos para 'block' (estado original)
             successBox.style.display = 'block';
             failureBox.style.display = 'block';
 
-            // Chama o popup de explicação APÓS o feedback de erro sumir
             if (!acertou && questaoAtual && questaoAtual.explanation) {
                 const moduloAtual = questaoAtual.lessons;
                 if (moduloAtual === 'Story Time' || moduloAtual === 'Grammar Practice') {
                     showExplanation(questaoAtual.explanation);
                 }
             }
-        }, 400); // O 400ms deve ser igual ao 'transition: all 0.4s...' no style.css
+        }, 400); 
 
     }, ANIMATION_DURATION);
 }
 
 
 // --- FUNÇÃO CENTRAL DE SELEÇÃO DE ALTERNATIVA ---
-export function selecionarAlternativaGenerica(textoAlternativa, questaoAtual) {
+function selecionarAlternativaGenerica(textoAlternativa, questaoAtual) {
     
     const containerAlternativas = document.getElementById('alternativas-container');
     if (containerAlternativas.classList.contains('alternativas-bloqueadas')) {
         return;
     }
 
-    // CRÍTICO: Usa a nova função unificada de pausa
     pauseAllAudios();
     
     let respostaParaComparar;
@@ -185,24 +166,19 @@ export function selecionarAlternativaGenerica(textoAlternativa, questaoAtual) {
     
     const acertou = respostaParaComparar === respostaCorreta; 
 
-    // ** LÓGICA DE CADASTRO NO QUESTIONARIO **
     const filtros = getFiltrosDaUrl();
     const idAluno = filtros.uuid;
-    // Pega o ID da questão da tabela 'aulaplus'
     const idQuestao = questaoAtual.id; 
-    // Assume que 'pontuacao' é a coluna na tabela 'aulaplus'
     const pontuacaoMaxima = questaoAtual.pontuacao || 0; 
     const pontuacaoFinal = acertou ? pontuacaoMaxima : 0;
     
     if (idAluno && idQuestao) {
-        // Chamada assíncrona para salvar a resposta (não bloqueia o fluxo de UI)
-        salvarResposta(idAluno, idQuestao, textoAlternativa, pontuacaoFinal);
+        // Chamada AGORA é feita para a função GLOBAL (window.salvarResposta)
+        window.salvarResposta(idAluno, idQuestao, textoAlternativa, pontuacaoFinal);
     } else {
         console.warn("Não foi possível salvar a resposta: ID do Aluno ou ID da Questão ausente.");
     }
-    // ** FIM DA LÓGICA DE CADASTRO **
 
-    // Lógica de feedback visual
     document.querySelectorAll('.alternativa-btn').forEach(btn => {
         
         const btnValueRaw = btn.getAttribute('data-value');
@@ -220,7 +196,6 @@ export function selecionarAlternativaGenerica(textoAlternativa, questaoAtual) {
 
         btn.classList.remove('acertou', 'errou', 'correta');
         
-        // 1. Marca a seleção do usuário
         if (btnTextoLimpo === respostaParaComparar) { 
             if (acertou) {
                 btn.classList.add('acertou');
@@ -229,7 +204,6 @@ export function selecionarAlternativaGenerica(textoAlternativa, questaoAtual) {
             }
         }
         
-        // 2. Se errou, marca a correta
         if (!acertou && btnTextoLimpo === respostaCorreta) {
             btn.classList.add('correta'); 
         }
@@ -239,6 +213,7 @@ export function selecionarAlternativaGenerica(textoAlternativa, questaoAtual) {
 
     document.getElementById('btn-proxima-questao').disabled = false;
 }
+
 
 // --- LÓGICA DO ROUTER (INIT) ---
 
@@ -254,7 +229,6 @@ const MODULOS_MAP = {
 // FUNÇÃO DE INICIALIZAÇÃO DA PÁGINA (ROUTER)
 window.onload = async function() {
     
-    // Adiciona o listener para fechar o modal de explicação
     const closeBtn = document.getElementById('close-explanation-btn');
     if (closeBtn) {
         closeBtn.addEventListener('click', hideExplanation);
@@ -276,9 +250,11 @@ window.onload = async function() {
         tituloElement.innerText = `Carregando lição: ${lesson}...`;
         
         try {
-            // Importação dinâmica (o navegador faz o download e executa)
+            // A importação dinâmica continua sendo usada para carregar os módulos
             const module = await import(scriptPath);
             
+            // CRÍTICO: As funções nos módulos agora são globais ou devem ser acessadas
+            // Se o módulo não estiver usando 'export', a função deve ser globalmente definida.
             if (typeof module.iniciarModulo === 'function') {
                 module.iniciarModulo();
             } else {
@@ -294,3 +270,13 @@ window.onload = async function() {
         tituloElement.innerText = `Erro: Módulo '${lesson}' desconhecido.`;
     }
 };
+
+// CRÍTICO: Torna as funções de utilidade globais para que os módulos possam usá-las.
+window.generateSupabaseUrl = generateSupabaseUrl;
+window.getFiltrosDaUrl = getFiltrosDaUrl;
+window.limparStringResposta = limparStringResposta;
+window.showExplanation = showExplanation;
+window.hideExplanation = hideExplanation;
+window.pauseAllAudios = pauseAllAudios;
+window.showFeedback = showFeedback;
+window.selecionarAlternativaGenerica = selecionarAlternativaGenerica;

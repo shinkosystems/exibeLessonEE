@@ -1,13 +1,12 @@
-// supabase_client.js - AJUSTADO com nomenclatura aprimorada e CORREÇÃO DE INICIALIZAÇÃO PARA WEBVIEW
-
-import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+// supabase_client.js - NOVO FORMATO SEM MÓDULOS
 
 // ** SUAS CHAVES **
 const SUPABASE_URL = 'https://qazjyzqptdcnuezllbpr.supabase.co'; 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhemp5enFwdGRjbnVlemxsYnByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1NDY4NTQsImV4cCI6MjA2NDEyMjg1NH0.H6v1HUH-LkHDH-WaaLQyN8GMeNLk0V27VJzHuXHin9M'; 
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-    // 🛑 BLOCO CRÍTICO: Desabilita o armazenamento de sessão para evitar o erro "TypeError: AuthClient" em WebViews/ambientes restritos.
+// CRÍTICO: Usa a variável global 'supabase' (fornecida pela CDN) para criar o cliente.
+const supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    // Mantém as configurações para desabilitar o Auth e evitar o TypeError em Webviews.
     auth: {
         storage: null, 
         autoRefreshToken: false,
@@ -16,17 +15,20 @@ export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     }
 });
 
+// CRÍTICO: Torna o cliente Supabase e as variáveis/funções globais (acessíveis em main.js e módulos).
+window.supabaseClient = supabaseClient;
 let listaDeQuestoes = [];
 let indiceAtual = 0;
-//comentario
 
 
-export async function carregarTodasQuestoes(filtros) {
+// --- FUNÇÕES GLOBAIS ---
+
+window.carregarTodasQuestoes = async function(filtros) {
     try {
         listaDeQuestoes = [];
         indiceAtual = 0;
 
-        let query = supabase
+        let query = window.supabaseClient 
             .from('aulaplus')
             .select('*');
 
@@ -39,8 +41,7 @@ export async function carregarTodasQuestoes(filtros) {
             .order('id', { ascending: true }); 
             
         if (error) {
-            console.error(`Erro Supabase ao carregar todas as questões:`, error.message);
-            // IMPORTANTE: Se isso falhar, verifique a RLS (SELECT para 'anon') na tabela 'aulaplus'.
+            console.error(`Erro Supabase ao carregar todas as questões (RLS?):`, error.message);
             return false;
         }
 
@@ -56,39 +57,26 @@ export async function carregarTodasQuestoes(filtros) {
     }
 }
 
-/**
- * Retorna o dado da questão no índice ATUAL. NÃO AVANÇA O ÍNDICE.
- * RENOMEADO de getProximaQuestao para CLAREZA.
- */
-export function getQuestaoAtual() {
+window.getQuestaoAtual = function() {
     if (indiceAtual < listaDeQuestoes.length) {
         return listaDeQuestoes[indiceAtual];
     }
     return null; 
 }
 
-
-/**
- * AVANÇA o índice para a próxima questão na lista. 
- */
-export function avancarQuestaoNaLista() {
+window.avancarQuestaoNaLista = function() {
     if (indiceAtual < listaDeQuestoes.length) {
         indiceAtual++;
     }
 }
 
-/**
- * NOVO: Verifica se a questão atual é a última da lista.
- */
-export function isLastQuestion() {
-    // Se o índice atual for igual ao último índice válido (length - 1), é a última.
+window.isLastQuestion = function() {
     return indiceAtual === listaDeQuestoes.length - 1;
 }
 
-// ** MANTIDO: Função para salvar a resposta na tabela questionario **
-export async function salvarResposta(idaluno, idquestao, respostaAluno, pontuacao) {
+window.salvarResposta = async function(idaluno, idquestao, respostaAluno, pontuacao) {
     try {
-        const { data, error } = await supabase
+        const { data, error } = await window.supabaseClient
             .from('questionario')
             .insert([
                 {
@@ -100,8 +88,7 @@ export async function salvarResposta(idaluno, idquestao, respostaAluno, pontuaca
             ]);
 
         if (error) {
-            console.error('Erro Supabase ao salvar resposta:', error.message);
-            // ATENÇÃO: Verifique as políticas RLS (INSERT para 'anon' ou 'authenticated') na tabela 'questionario'
+            console.error('Erro Supabase ao salvar resposta (questionario):', error.message);
             return false;
         }
         console.log(`Resposta salva para idquestao: ${idquestao}, aluno: ${idaluno}`);

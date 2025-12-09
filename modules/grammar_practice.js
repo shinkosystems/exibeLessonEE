@@ -1,7 +1,4 @@
-// modules/grammar_practice.js
-
-import { carregarTodasQuestoes, getQuestaoAtual, avancarQuestaoNaLista, isLastQuestion } from '../supabase_client.js'; 
-import { generateSupabaseUrl, getFiltrosDaUrl, selecionarAlternativaGenerica, hideExplanation } from '../main.js'; 
+// modules/grammar_practice.js - CORRIGIDO (Removido 'import' e usando funções globais)
 
 let questaoAtual = null;
 
@@ -25,9 +22,16 @@ function carregarGrammarPractice(questao) {
     }
 
     const containerAlternativas = document.getElementById('alternativas-container');
+    containerAlternativas.innerHTML = ''; // Limpeza adicional
+
+    // CRÍTICO: Sugestão de correção para JSON string
+    let opcoes = questao.opcoes;
+    if (typeof opcoes === 'string') {
+        try { opcoes = JSON.parse(opcoes); } catch (e) { opcoes = null; }
+    }
     
-    if (questao.opcoes && Array.isArray(questao.opcoes)) { 
-        questao.opcoes.forEach((texto) => {
+    if (opcoes && Array.isArray(opcoes)) { 
+        opcoes.forEach((texto) => {
             const button = document.createElement('button');
             button.className = 'alternativa-btn audio-option-wrapper';
             const textoOpcao = texto.trim(); 
@@ -42,7 +46,6 @@ function carregarGrammarPractice(questao) {
     }
 }
 
-// Lógica de navegação
 function avancarQuiz() {
     hideExplanation();
     avancarQuestaoNaLista();
@@ -57,6 +60,8 @@ function exibirQuestaoAtual() {
         btnProxima.onclick = avancarQuiz; 
     }
     
+    // CORREÇÃO VISUAL
+    document.getElementById('extra-audios-questions-container').style.display = 'none';
     document.getElementById('imagem-principal-bg').style.display = 'none';
     document.getElementById('audio-player').style.display = 'none';
     const containerAlternativas = document.getElementById('alternativas-container');
@@ -81,7 +86,7 @@ function exibirQuestaoAtual() {
 /**
  * Ponto de entrada para o Router (main.js)
  */
-export async function iniciarModulo() {
+window.iniciarModuloGrammarPractice = async function() {
     const closeBtn = document.getElementById('close-explanation-btn');
     if (closeBtn) {
         closeBtn.onclick = hideExplanation;

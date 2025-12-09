@@ -1,7 +1,8 @@
-// modules/story_time.js
+// modules/story_time.js - CORRIGIDO (Removido 'import' e usando funções globais)
 
-import { carregarTodasQuestoes, getQuestaoAtual, avancarQuestaoNaLista, isLastQuestion } from '../supabase_client.js'; 
-import { generateSupabaseUrl, getFiltrosDaUrl, selecionarAlternativaGenerica, hideExplanation } from '../main.js'; 
+// Funções agora são acessadas como variáveis globais:
+// getQuestaoAtual, avancarQuestaoNaLista, isLastQuestion, generateSupabaseUrl, 
+// getFiltrosDaUrl, selecionarAlternativaGenerica, hideExplanation, carregarTodasQuestoes
 
 let questaoAtual = null;
 
@@ -25,15 +26,23 @@ function carregarStoryTime(questao) {
     }
 
     const containerAlternativas = document.getElementById('alternativas-container');
+    containerAlternativas.innerHTML = ''; // Limpeza adicional
     
-    if (questao.opcoes && Array.isArray(questao.opcoes)) { 
-        questao.opcoes.forEach((texto) => {
+    // CRÍTICO: Sugestão de correção para JSON string (Se necessário, você pode implementar o try/catch de JSON.parse aqui)
+    let opcoes = questao.opcoes;
+    if (typeof opcoes === 'string') {
+        try { opcoes = JSON.parse(opcoes); } catch (e) { opcoes = null; }
+    }
+    
+    if (opcoes && Array.isArray(opcoes)) { 
+        opcoes.forEach((texto) => {
             const button = document.createElement('button');
             button.className = 'alternativa-btn audio-option-wrapper';
             const textoOpcao = texto.trim(); 
             button.innerText = textoOpcao; 
             
             button.setAttribute('data-value', textoOpcao); 
+            // Usando a função global
             button.onclick = () => selecionarAlternativaGenerica(textoOpcao, questaoAtual); 
             containerAlternativas.appendChild(button);
         });
@@ -42,7 +51,6 @@ function carregarStoryTime(questao) {
     }
 }
 
-// Lógica de navegação
 function avancarQuiz() {
     hideExplanation();
     avancarQuestaoNaLista();
@@ -57,6 +65,8 @@ function exibirQuestaoAtual() {
         btnProxima.onclick = avancarQuiz; 
     }
     
+    // CORREÇÃO VISUAL: Limpar extra-audios-questions-container ao entrar no módulo
+    document.getElementById('extra-audios-questions-container').style.display = 'none';
     document.getElementById('imagem-principal-bg').style.display = 'none';
     document.getElementById('audio-player').style.display = 'none';
     const containerAlternativas = document.getElementById('alternativas-container');
@@ -80,8 +90,9 @@ function exibirQuestaoAtual() {
 
 /**
  * Ponto de entrada para o Router (main.js)
+ * Agora é definido como uma função global para ser chamado pelo main.js (import dinâmico).
  */
-export async function iniciarModulo() {
+window.iniciarModuloStoryTime = async function() {
     const closeBtn = document.getElementById('close-explanation-btn');
     if (closeBtn) {
         closeBtn.onclick = hideExplanation;
