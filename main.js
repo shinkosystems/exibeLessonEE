@@ -1,12 +1,18 @@
-// main.js - ROUTER E UTILITÁRIOS GLOBAIS (SEM EXPORT/IMPORT)
+// main.js - ROUTER E UTILITÁRIOS GLOBAIS (FINAL)
 
 // CONFIGURAÇÕES GLOBAIS
 const SUPABASE_BASE_URL = 'https://qazjyzqptdcnuezllbpr.supabase.co/storage/v1/object/public/connection/'; 
 const ANIMATION_DURATION = 1500; 
-window.currentPlayingAudio = null; // Rastreia o áudio ativo para controle de UX
+window.currentPlayingAudio = null; 
 
-// A função salvarResposta agora é global (window.salvarResposta) e não precisa ser importada.
-
+// Mapeamento de Módulos para Arquivos E FUNÇÃO DE INICIALIZAÇÃO GLOBAL
+const MODULOS_MAP = {
+    'Picture Description': { path: './modules/picture_description.js', initFunc: 'iniciarModuloPictureDescription' },
+    'Story Time': { path: './modules/story_time.js', initFunc: 'iniciarModuloStoryTime' },
+    'Grammar Practice': { path: './modules/grammar_practice.js', initFunc: 'iniciarModuloGrammarPractice' },
+    'Quiz': { path: './modules/quiz.js', initFunc: 'iniciarModuloQuiz' },
+    'Extra Audios': { path: './modules/extra_audios.js', initFunc: 'iniciarModuloExtraAudios' }, 
+};
 
 // --- UTILS DE URL E STRINGS ---
 
@@ -173,7 +179,7 @@ function selecionarAlternativaGenerica(textoAlternativa, questaoAtual) {
     const pontuacaoFinal = acertou ? pontuacaoMaxima : 0;
     
     if (idAluno && idQuestao) {
-        // Chamada AGORA é feita para a função GLOBAL (window.salvarResposta)
+        // Chamada para a função global
         window.salvarResposta(idAluno, idQuestao, textoAlternativa, pontuacaoFinal);
     } else {
         console.warn("Não foi possível salvar a resposta: ID do Aluno ou ID da Questão ausente.");
@@ -217,15 +223,6 @@ function selecionarAlternativaGenerica(textoAlternativa, questaoAtual) {
 
 // --- LÓGICA DO ROUTER (INIT) ---
 
-// Mapeamento de Módulos para Arquivos
-const MODULOS_MAP = {
-    'Picture Description': './modules/picture_description.js',
-    'Story Time': './modules/story_time.js',
-    'Grammar Practice': './modules/grammar_practice.js',
-    'Quiz': './modules/quiz.js',
-    'Extra Audios': './modules/extra_audios.js', 
-};
-
 // FUNÇÃO DE INICIALIZAÇÃO DA PÁGINA (ROUTER)
 window.onload = async function() {
     
@@ -244,26 +241,28 @@ window.onload = async function() {
         return;
     }
 
-    const scriptPath = MODULOS_MAP[lesson];
+    const moduloInfo = MODULOS_MAP[lesson]; // 🛑 Agora usa o mapa completo com path e nome da função
     
-    if (scriptPath) {
+    if (moduloInfo) {
         tituloElement.innerText = `Carregando lição: ${lesson}...`;
         
         try {
-            // A importação dinâmica continua sendo usada para carregar os módulos
-            const module = await import(scriptPath);
+            // A importação dinâmica continua sendo usada para carregar o script
+            const module = await import(moduloInfo.path);
             
-            // CRÍTICO: As funções nos módulos agora são globais ou devem ser acessadas
-            // Se o módulo não estiver usando 'export', a função deve ser globalmente definida.
-            if (typeof module.iniciarModulo === 'function') {
-                module.iniciarModulo();
+            // CRÍTICO: CHAMA A FUNÇÃO GLOBAL PELO NOME DEFINIDO NO MAPA
+            const initFunction = window[moduloInfo.initFunc]; 
+
+            if (typeof initFunction === 'function') {
+                initFunction(); // Chama a função global correta
             } else {
-                tituloElement.innerText = `Erro: Módulo '${lesson}' (${scriptPath}) não exporta 'iniciarModulo'.`;
+                tituloElement.innerText = `Erro: Função de inicialização '${moduloInfo.initFunc}' não encontrada no escopo global.`;
+                console.error(`Erro: Função de inicialização '${moduloInfo.initFunc}' não encontrada.`);
             }
             
         } catch (e) {
             tituloElement.innerText = `Erro ao carregar o script do módulo '${lesson}'.`;
-            console.error(`Falha ao importar ${scriptPath}:`, e);
+            console.error(`Falha ao importar ${moduloInfo.path}:`, e);
         }
         
     } else {
