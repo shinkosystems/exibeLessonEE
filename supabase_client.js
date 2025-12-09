@@ -1,4 +1,4 @@
-// supabase_client.js - AJUSTADO com nomenclatura aprimorada
+// supabase_client.js - AJUSTADO com nomenclatura aprimorada e CORREÇÃO DE INICIALIZAÇÃO PARA WEBVIEW
 
 import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
 
@@ -6,7 +6,15 @@ import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js
 const SUPABASE_URL = 'https://qazjyzqptdcnuezllbpr.supabase.co'; 
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InFhemp5enFwdGRjbnVlemxsYnByIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDg1NDY4NTQsImV4cCI6MjA2NDEyMjg1NH0.H6v1HUH-LkHDH-WaaLQyN8GMeNLk0V27VJzHuXHin9M'; 
 
-export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+export const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+    // 🛑 BLOCO CRÍTICO: Desabilita o armazenamento de sessão para evitar o erro "TypeError: AuthClient" em WebViews/ambientes restritos.
+    auth: {
+        storage: null, 
+        autoRefreshToken: false,
+        persistSession: false,
+        detectSessionInUrl: false
+    }
+});
 
 let listaDeQuestoes = [];
 let indiceAtual = 0;
@@ -32,6 +40,7 @@ export async function carregarTodasQuestoes(filtros) {
             
         if (error) {
             console.error(`Erro Supabase ao carregar todas as questões:`, error.message);
+            // IMPORTANTE: Se isso falhar, verifique a RLS (SELECT para 'anon') na tabela 'aulaplus'.
             return false;
         }
 
@@ -92,7 +101,7 @@ export async function salvarResposta(idaluno, idquestao, respostaAluno, pontuaca
 
         if (error) {
             console.error('Erro Supabase ao salvar resposta:', error.message);
-            // ATENÇÃO: Verifique as políticas RLS na tabela 'questionario'
+            // ATENÇÃO: Verifique as políticas RLS (INSERT para 'anon' ou 'authenticated') na tabela 'questionario'
             return false;
         }
         console.log(`Resposta salva para idquestao: ${idquestao}, aluno: ${idaluno}`);
